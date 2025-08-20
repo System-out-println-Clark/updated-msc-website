@@ -6,12 +6,6 @@
     box-sizing: border-box;
 }
 
-
-
-:root {
-  --size: 3vmin;
-}
-
 @keyframes gradientBackground {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
@@ -28,9 +22,9 @@ body {
   padding: 20px;
   padding-top: 4.5rem;
   font-family: 'Segoe UI';
-  background: #0d1117;
+  --tw-bg-opacity: 1;
+  background-color: rgb(10 26 53 / var(--tw-bg-opacity, 1));
   color: #fff;
-  min-height: 100vh;
   position: relative;
   padding-top: 4.5rem;
   display: flex;
@@ -72,28 +66,6 @@ body::after {
   pointer-events: none;
 }
 
-.el {
-  background: conic-gradient(
-    from 180deg at 50% 70%,
-    hsla(0, 0%, 98%, 1) 0deg,
-    #b9da05 72deg,
-    #0051ff 144deg,
-    #0095ff 216deg,
-    #b9da05 288deg,
-    hsla(0, 0%, 98%, 1) 360deg
-  );
-  width: 100%;
-  height: 100%;
-  mask: radial-gradient(circle at 50% 50%, white 2px, transparent 2.5px) 50% 50% / var(--size) var(--size),
-        url("https://assets.codepen.io/605876/noise-mask.png") 256px 50% / 256px 256px;
-  mask-composite: intersect;
-  animation: flicker 20s infinite linear;
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: -1;
-}
-
 
 /* Main Header */
 .container {
@@ -115,6 +87,8 @@ body::after {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
+
 }
 
 /* Scroll effect: add shadow and darker bg */
@@ -216,6 +190,19 @@ body::after {
     .announcement-card h3 {
         font-size: 1.05rem;
     }
+}
+
+.card-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 20px;
+    flex: 1;
+    display: block;
 }
 
 .card {
@@ -412,12 +399,47 @@ input:focus, select:focus {
   margin-top: 4px;
   font-size: 12px;
   color: red;
-  position: absolute;   /* take it out of layout flow */
-  top: 100%;             /* place right under input */
-  left: 0;
+  position: relative;   /* take it out of layout flow */
+  left: 50;
   white-space: normal;
 }
 
 #regPassword {
   padding-right: 40px; /* leave room for toggle button */
+}
+
+/* Modal background */
+.status-modal {
+  display: none; 
+  position: fixed; 
+  z-index: 9999; 
+  left: 0; top: 0; 
+  width: 100%; height: 100%; 
+  background: rgba(0,0,0,0.5); 
+  justify-content: center; 
+  align-items: center;
+}
+
+/* Modal box */
+.status-modal-content {
+  background: #18181b;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 400px;
+  text-align: center;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Close button */
+.status-modal-close {
+  position: absolute;
+  top: 10px; right: 15px;
+  cursor: pointer;
+  font-size: 22px;
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from {opacity: 0; transform: scale(0.9);}
+  to {opacity: 1; transform: scale(1);}
 }

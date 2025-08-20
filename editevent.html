@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BulSU MSC | Edit Event</title>
+  <link href="https://cdn.jsdelivr.net/npm/lucide-static@latest/font/lucide.css" rel="stylesheet">
+  <link href="./Logos/Bulsu MSC Logo-02.png" rel="icon" type="image/png" />
+  <link rel="stylesheet" href="/updated-msc-website/css/editevent_style.css" />
+</head>
+<body>
+
+  <main>
+    <!-- Hero -->
+    <div class="hero">
+      <h1><i class="lucide lucide-calendar-days" style="margin-right:10px"></i> Edit Event</h1>
+      <p>Modify or update event details quickly and easily.</p>
+    </div>
+
+    <div class="content">
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="active" data-tab="upcoming">Upcoming</button>
+        <button data-tab="past">Past</button>
+        <button data-tab="canceled">Canceled</button>
+        <button data-tab="completed">Completed</button>
+        <button data-tab="add">Add Event</button>
+      </div>
+
+      <!-- Tab contents -->
+      <div id="tab-content">
+        <!-- Upcoming events by default -->
+        <div class="event-list">
+          <h3>Upcoming Events</h3>
+          <div class="event-card">
+            <h4>Sample Event 1</h4>
+            <p>2025-09-01 | 10:00 - 12:00</p>
+            <p>Location: Valencia Hall</p>
+            <p>Type: Onsite | Registration: Required</p>
+            <p>Description of the sample event goes here.</p>
+          </div>
+          <div class="event-card">
+            <h4>Sample Event 2</h4>
+            <p>2025-09-05 | 13:00 - 15:00</p>
+            <p>Location: Online</p>
+            <p>Type: Online | Registration: Not Required</p>
+            <p>Another description for event 2.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>© 2025 <a href="/">BulSU MSC</a>. All Rights Reserved.</p>
+    <button onclick="window.scrollTo({top:0, behavior:'smooth'})">
+      BulSU Microsoft Student Community
+    </button>
+  </footer>
+
+  <script>
+    const tabs = document.querySelectorAll('.tabs button');
+    const content = document.getElementById('tab-content');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(btn => btn.classList.remove('active'));
+        tab.classList.add('active');
+        const tabName = tab.dataset.tab;
+
+        if(tabName === "add") {
+          content.innerHTML = `
+            <form>
+              <div>
+                <label>Event Name</label>
+                <input type="text" placeholder="Event Name"/>
+              </div>
+              <div>
+                <label>Event Date</label>
+                <input type="date"/>
+              </div>
+              <div>
+                <label>Start Time</label>
+                <input type="time"/>
+              </div>
+              <div>
+                <label>End Time</label>
+                <input type="time"/>
+              </div>
+              <div>
+                <label>Duration</label>
+                <input type="text" placeholder="e.g. 3 hours"/>
+              </div>
+              <div>
+                <label>Location</label>
+                <input type="text" placeholder="e.g. Valencia Hall"/>
+              </div>
+              <div>
+                <label>Event Type</label>
+                <select>
+                  <option>Onsite</option>
+                  <option>Online</option>
+                  <option>Hybrid</option>
+                </select>
+              </div>
+              <div>
+                <label>Registration</label>
+                <select>
+                  <option>Required</option>
+                  <option>Not Required</option>
+                </select>
+              </div>
+              <div class="full-span">
+                <label>Description</label>
+                <textarea rows="4"></textarea>
+              </div>
+              <div class="full-span">
+                <label>Image URL</label>
+                <input type="text"/>
+              </div>
+              <div class="full-span">
+                <label>Event Status</label>
+                <select>
+                  <option>Upcoming</option>
+                  <option>Past</option>
+                  <option>Canceled</option>
+                  <option>Completed</option>
+                </select>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="save-btn">
+                  <i class="lucide lucide-save"></i> Save Event
+                </button>
+              </div>
+              <p class="feedback" style="display:none">✅ Event created successfully!</p>
+            </form>
+          `;
+        } else {
+          content.innerHTML = `
+            <div class="event-list">
+              <h3>${tab.textContent} Events</h3>
+              <p class="no-events">No events found for this category.</p>
+            </div>
+          `;
+        }
+      });
+    });
+  </script>
+</body>
+</html>

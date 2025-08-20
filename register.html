@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Your Account</title>
     <link href="./Logos/Bulsu MSC Logo-02.png" rel="icon" type="image/png" />
-    <link rel="stylesheet" href="/updated-msc-website/css/registration_style.css">
+    <link rel="stylesheet" href="/updated-msc-website/css/register_style.css">
 
 </head>
 <body>
@@ -25,7 +25,6 @@
             </div>
         </div>
     </nav>
-    <div class="el"></div>
     <div class="card-wrapper">
         <div class="card">
             <div class="card-header">
@@ -80,22 +79,25 @@
                                 
                             </div>
                             <small id="passwordHint" style="color: red; display: none;">
-                                Password must contain at least one uppercase letter, one lowercase letter, and one number.
+                                Password must contain at least one uppercase letter, one lowercase<br/>letter, and one number.
                                 </small>
                                 <script>
-                                
-                                document.getElementById("regPassword").addEventListener("input", function() {
-                                    const password = this.value;
+                                document.addEventListener("DOMContentLoaded", () => {
+                                    const regPassword = document.getElementById("regPassword");
                                     const hint = document.getElementById("passwordHint");
 
-                                    // Regex: at least 1 uppercase, 1 lowercase, 1 digit, min length 8
-                                    const valid = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).{8,}$/.test(password);
+                                    regPassword.addEventListener("input", function () {
+                                        const password = this.value;
 
-                                    if (!valid) {
-                                        hint.style.display = "block";
-                                    } else {
-                                        hint.style.display = "none";
-                                    }
+                                        // Regex: at least 1 uppercase, 1 lowercase, 1 digit, min length 8
+                                        const valid = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).{8,}$/.test(password);
+
+                                        if (!valid) {
+                                            hint.style.display = "block";
+                                        } else {
+                                            hint.style.display = "none";
+                                        }
+                                    });
                                 });
                                 </script>
                             <p class="hint">Must be at least 8 characters</p>
@@ -168,48 +170,79 @@
             </div>
 
             <div class="card-footer">
-                <p>Already have an account? <a href="#">Sign in here</a></p>
+                <p>Already have an account? <a href="login.html">Sign in here</a></p>
                 <small>Powered by <b>BulSU MSC</b></small>
             </div>
         </div>
     </div>
-    <script src="college-program.js"></script>
+    <!-- Status Modal -->
+    <div id="statusModal" class="status-modal">
+    <div class="status-modal-content">
+        <span id="statusModalClose" class="status-modal-close">&times;</span>
+        <h3 id="statusModalTitle"></h3>
+        <p id="statusModalMessage"></p>
+    </div>
+    </div>
+    <script src="program-and-course.js"></script>
     <script>
-        const API_BASE = "/updated-msc-website/api";
+    const API_BASE = "/updated-msc-website/api";
 
-        async function apiCall(endpoint, method = "GET", data = null, title = "") {
-        try {
-            const options = {
-            method: method,
-            headers: {
-                "Content-Type": "application/json",
-            },
-            credentials: "include",
-            };
+    // Function to open modal
+    function openStatusModal(title, message, isSuccess) {
+    const modal = document.getElementById("statusModal");
+    document.getElementById("statusModalTitle").innerText = title;
+    document.getElementById("statusModalMessage").innerText = message;
+    
+    // Change title color depending on success/fail
+    document.getElementById("statusModalTitle").style.color = isSuccess ? "green" : "red";
+    
+    modal.style.display = "flex";
+    }
 
-            if (data) {
-            options.body = JSON.stringify(data);
-            }
+    // Close modal when clicking X or outside
+    document.getElementById("statusModalClose").onclick = function() {
+    document.getElementById("statusModal").style.display = "none";
+    };
+    window.onclick = function(e) {
+    if (e.target === document.getElementById("statusModal")) {
+        document.getElementById("statusModal").style.display = "none";
+    }
+    };
 
-            console.log(`🚀 ${method} ${endpoint}:`, data);
+    async function apiCall(endpoint, method = "GET", data = null, title = "") {
+    try {
+        const options = {
+        method: method,
+        headers: {
+            "Content-Type": "application/json",
+        },
+        credentials: "include",
+        };
 
-            const response = await fetch(`${API_BASE}${endpoint}`, options);
-            const result = await response.json();
-            console.log(result);
-
-            if (!response.ok) {
-            alert(result.message || `❌ ${title} failed`);
-            } else {
-            alert(result.message || `✅ ${title} successful`);
-            }
-
-            return result;
-        } catch (error) {
-            console.error("API Error:", error);
-            alert(`Network error during ${title}`);
-            return null;
+        if (data) {
+        options.body = JSON.stringify(data);
         }
+
+        console.log(`🚀 ${method} ${endpoint}:`, data);
+
+        const response = await fetch(`${API_BASE}${endpoint}`, options);
+        const result = await response.json();
+        console.log(result);
+
+        if (!response.ok) {
+        openStatusModal("❌ " + title + " Failed", result.message || `${title} failed`, false);
+        } else {
+        openStatusModal("✅ " + title + " Successful", result.message || `${title} successful`, true);
+        window.location.href = "login.html"; // Redirect to login after successful registration
         }
+
+        return result;
+    } catch (error) {
+        console.error("API Error:", error);
+        openStatusModal("⚠ Network Error", `Network error during ${title}`, false);
+        return null;
+    }
+    }
 
     async function testRegister() {
     const data = {
@@ -228,13 +261,12 @@
         program: document.getElementById("regProgram").value,
     };
     await apiCall("/auth/register", "POST", data, "📝 User Registration");
-}
+    }
 
     document.getElementById("registrationForm").addEventListener("submit", function(e) {
-        e.preventDefault();
-        testRegister();
+    e.preventDefault();
+    testRegister();
     });
     </script>
-
 </body>
 </html>

@@ -1,0 +1,183 @@
+html, body {
+    height: 100%;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  display : flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #f9f9f9;
+  margin: 0;
+  padding: 0;
+  color: #333;
+}
+
+main {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px;
+  flex: 1;
+  display: block;
+}
+/* Hero */
+.hero {
+  margin-top: 20px;
+  background: url('../Background/msc001.jpg') center/cover no-repeat;
+  padding: 3rem;
+  border-radius: 18px;
+  border: 1px solid #ddd;
+  text-align: center;
+}
+.hero h1 {
+  font-size: 3rem;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hero p {
+  color: white;
+  font-size: 1.2rem;
+  margin-top: 0.5rem;
+}
+/* Tabs */
+.tabs {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin: 2rem 0;
+  flex-wrap: wrap;
+}
+.tabs button {
+  padding: 0.5rem 1.5rem;
+  border-radius: 9999px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+.tabs button.active {
+  background: #2563eb;
+  color: white;
+}
+.tabs button:not(.active) {
+  background: #f3f4f6;
+  color: #374151;
+}
+.tabs button:not(.active):hover {
+  background: #e5e7eb;
+}
+/* Content card */
+.content {
+  background: white;
+  padding: 2rem;
+  border-radius: 24px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+  border: 1px solid #ddd;
+}
+/* Event card */
+.event-card {
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.event-card h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.hero, .content {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+.event-card p {
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+  color: #555;
+}
+.no-events {
+  color: #666;
+  font-style: italic;
+}
+/* Form */
+form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+@media (min-width: 768px) {
+  form {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+label {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+input, select, textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  outline: none;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37,99,235,0.3);
+}
+textarea {
+  resize: vertical;
+}
+.full-span {
+  grid-column: span 2;
+}
+.form-actions {
+  grid-column: span 2;
+  text-align: right;
+}
+button.save-btn {
+  background: #2563eb;
+  color: white;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.3s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+button.save-btn:hover {
+  background: #1d4ed8;
+}
+.feedback {
+  grid-column: span 2;
+  text-align: center;
+  color: green;
+  margin-top: 0.5rem;
+  font-weight: 500;
+}
+/* Footer */
+footer {
+  background: #202020;
+  color: white;
+  text-align: center;
+  padding: 2rem 1rem;
+  margin-top: 2rem;
+}
+footer a {
+  color: #60a5fa;
+  text-decoration: none;
+}
+footer a:hover {
+  text-decoration: underline;
+}
