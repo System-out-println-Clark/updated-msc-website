@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BulSU MSC | Edit Announcement</title>
+  <link href="./Logos/Bulsu MSC Logo-02.png" rel="icon" type="image/png" />
+  <link rel="stylesheet" href="/updated-msc-website/css/edit-announcement.css" />
+</head>
+<body>
+    <div class="page-wrapper">
+        <div class="page-container">
+            <!-- Banner -->
+            <div class="banner">
+            <h1><span class="icon">✏️</span> Announcements</h1>
+            <p>Manage and customize announcements with ease.</p>
+            </div>
+
+            <div class="card-container">
+                <!-- Tabs -->
+                <div class="tab-buttons">
+                <button class="tab-btn active" data-tab="active">✏️ Active</button>
+                <button class="tab-btn" data-tab="archived">📦 Archived</button>
+                <button class="tab-btn" data-tab="addnew">➕ Add New</button>
+                </div>
+
+                <!-- Content Container -->
+                <div class="tab-content">
+                <!-- Active Tab -->
+                <div class="tab-panel active" id="active">
+                    <h3>Active Announcements</h3>
+                    <div class="announcement-card">
+                    <h4>Sample Title</h4>
+                    <p class="announcement-text">Short summary text goes here...</p>
+                    <p class="announcement-content">Full content preview here...</p>
+                    <div class="announcement-actions">
+                        <button class="btn-save">💾 Save Changes</button>
+                        <button class="btn-archive">🗄️ Archive</button>
+                    </div>
+                    </div>
+                </div>
+
+                <!-- Archived Tab -->
+                <div class="tab-panel" id="archived">
+                    <h3>Archived Announcements</h3>
+                    <div class="announcement-card archived">
+                    <h4>Archived Title</h4>
+                    <p class="announcement-text">This is an archived announcement...</p>
+                    <small>Archived by Admin</small>
+                    </div>
+                </div>
+
+                <!-- Add New Tab -->
+                <div class="tab-panel" id="addnew">
+                    <form class="add-form">
+                    <label>📰 Title</label>
+                    <input type="text" placeholder="e.g. Orientation Week 2025" />
+
+                    <label>📌 Announcement Text</label>
+                    <textarea rows="3" placeholder="Short summary or preview..."></textarea>
+
+                    <label>📝 Full Content</label>
+                    <textarea rows="6" placeholder="Full announcement details..."></textarea>
+
+                    <label>👤 Posted By</label>
+                    <input type="text" value="Admin" />
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-submit">💾 Save Announcement</button>
+                    </div>
+                    </form>
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+  <!-- Footer -->
+  <footer>
+    <p>
+      © 2025 <a href="index.html">BulSU MSC</a>. All Rights Reserved.
+    </p>
+    <button class="MSC" onclick="window.scrollTo({ top: 0, behavior: 'smooth' })">
+      BulSU Microsoft Student Community
+    </button>
+  </footer>
+
+  <script src="edit-announcement.js"></script>
+</body>
+</html>

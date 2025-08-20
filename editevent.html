@@ -53,8 +53,8 @@
 
   <!-- Footer -->
   <footer>
-    <p>© 2025 <a href="/">BulSU MSC</a>. All Rights Reserved.</p>
-    <button onclick="window.scrollTo({top:0, behavior:'smooth'})">
+    <p>© 2025 <a href="index.html">BulSU MSC</a>. All Rights Reserved.</p>
+    <button onclick="window.scrollTo({ top: 0, behavior: 'smooth' })">
       BulSU Microsoft Student Community
     </button>
   </footer>
@@ -73,60 +73,51 @@
           content.innerHTML = `
             <form>
               <div>
-                <label>Event Name</label>
-                <input type="text" placeholder="Event Name"/>
+                <label class="event-title">Event Name</label>
+                <input type="text" class="name-start-location" placeholder="Event Name"/>
               </div>
               <div>
-                <label>Event Date</label>
-                <input type="date"/>
+                <label class="event-title">Event Date</label>
+                <input type="date" class="date-end-type"/>
               </div>
               <div>
-                <label>Start Time</label>
-                <input type="time"/>
+                <label class="event-title">Start Time</label>
+                <input type="time" class="name-start-location"/>
               </div>
               <div>
-                <label>End Time</label>
-                <input type="time"/>
+                <label class="event-title">End Time</label>
+                <input type="time" class="date-end-type"/>
               </div>
               <div>
-                <label>Duration</label>
-                <input type="text" placeholder="e.g. 3 hours"/>
+                <label class="event-title">Location</label>
+                <input type="text" class="name-start-location" placeholder="e.g. Valencia Hall"/>
               </div>
               <div>
-                <label>Location</label>
-                <input type="text" placeholder="e.g. Valencia Hall"/>
-              </div>
-              <div>
-                <label>Event Type</label>
-                <select>
+                <label class="event-title">Event Type</label>
+                <select class="type">
                   <option>Onsite</option>
                   <option>Online</option>
                   <option>Hybrid</option>
                 </select>
               </div>
               <div>
-                <label>Registration</label>
-                <select>
+                <label class="event-title">Registration</label>
+                <select class="registration">
                   <option>Required</option>
                   <option>Not Required</option>
                 </select>
               </div>
-              <div class="full-span">
-                <label>Description</label>
-                <textarea rows="4"></textarea>
-              </div>
-              <div class="full-span">
-                <label>Image URL</label>
-                <input type="text"/>
-              </div>
-              <div class="full-span">
-                <label>Event Status</label>
-                <select>
-                  <option>Upcoming</option>
-                  <option>Past</option>
-                  <option>Canceled</option>
-                  <option>Completed</option>
+              <div>
+                <label class="event-title">Event Restriction</label>
+                <select class="restriction">
+                  <option>Public</option>
+                  <option>Members Only</option>
+                  <option>Officers Only</option>
                 </select>
+              </div>
+              <div class="full-span">
+                <label class="event-title">Description</label>
+                <textarea rows="4" class="description"></textarea>
               </div>
               <div class="form-actions">
                 <button type="button" class="save-btn">

@@ -7,7 +7,7 @@ body {
   display : flex;
   flex-direction: column;
   min-height: 100vh;
-  background: #f9f9f9;
+  background-color: whitesmoke;
   margin: 0;
   padding: 0;
   color: #333;
@@ -20,6 +20,94 @@ main {
   padding: 20px;
   flex: 1;
   display: block;
+
+  /* Navbar fixed at top */
+#main-header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 50;
+  padding: 1rem 0;
+  background-color: rgba(0, 7, 28, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Scroll effect: add shadow and darker bg */
+#main-header.header-scrolled {
+  background-color: #00071c;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.4),
+    0 2px 4px -1px rgba(0, 0, 0, 0.4);
+}
+
+/* Logo styles */
+.logo-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: white;
+  transition: color 0.3s ease;
+  cursor: pointer;
+}
+
+.logo-link:hover {
+  color: #b9da05;
+}
+
+.logo-img {
+  height: 3rem; /* same as h-12 */
+}
+
+/* Nav links container (hidden on small screens if you want to add responsiveness later) */
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 2rem; /* spacing between links/icons */
+}
+
+/* Nav link styles */
+.nav-link {
+  font-weight: 600;
+  color: #d1d5db; /* Tailwind gray-300 */
+  cursor: pointer;
+  transition: color 0.3s ease;
+  user-select: none;
+}
+
+.nav-link:hover {
+  color: #b9da05;
+}
+
+/* Nav icon wrapper */
+.nav-icon-wrapper {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  border-radius: 0.25rem; /* optional for smooth edges */
+}
+
+.nav-icon-wrapper:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Nav icon styles */
+.nav-icon {
+  color: white;
+  font-size: 1.25rem;
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.nav-icon-wrapper:hover .nav-icon {
+  color: #b9da05;
+  transform: scale(1.1);
+}
+
 }
 /* Hero */
 .hero {
@@ -58,21 +146,26 @@ main {
   border: none;
   cursor: pointer;
   transition: background 0.3s;
+  font-weight: bold;
 }
 .tabs button.active {
-  background: #2563eb;
-  color: white;
+  background: #b9da05;
+  color: #0D0E0E;
 }
 .tabs button:not(.active) {
   background: #f3f4f6;
   color: #374151;
 }
 .tabs button:not(.active):hover {
-  background: #e5e7eb;
+  border-color: #d4f70a;
+  outline: none;
+  box-shadow: 0 0 10px 2px #d4f70a, 0 0 20px 4px rgba(212, 247, 10, 0.6);
 }
 /* Content card */
 .content {
-  background: white;
+  position: relative;
+  top: 3%;
+  background: #0D0E0E;
   padding: 2rem;
   border-radius: 24px;
   box-shadow: 0 5px 15px rgba(0,0,0,0.08);
@@ -130,9 +223,13 @@ input, select, textarea {
   transition: border 0.2s, box-shadow 0.2s;
 }
 input:focus, select:focus, textarea:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 2px rgba(37,99,235,0.3);
+  border-color: #d4f70a;
+  outline: none;
+  box-shadow: 0 0 10px 2px #d4f70a, 0 0 20px 4px rgba(212, 247, 10, 0.6);
+  background: linear-gradient(90deg, #232323 60%, #d4f70a22 100%);
+  color: whitesmoke;
 }
+
 textarea {
   resize: vertical;
 }
@@ -144,8 +241,8 @@ textarea {
   text-align: right;
 }
 button.save-btn {
-  background: #2563eb;
-  color: white;
+  background: #d4f70a;
+  color: black;
   font-weight: 600;
   padding: 0.75rem 1.5rem;
   border: none;
@@ -156,9 +253,15 @@ button.save-btn {
   align-items: center;
   gap: 0.5rem;
 }
+
 button.save-btn:hover {
-  background: #1d4ed8;
+  background: #d4f70a;
+  box-shadow: 0 0 6px 2px #d4f70a, 0 0 10px 4px #d4f70a55;
+  color: #232323;
+  filter: brightness(1.08);
+  transition: box-shadow 0.2s, filter 0.2s;
 }
+
 .feedback {
   grid-column: span 2;
   text-align: center;
@@ -180,4 +283,52 @@ footer a {
 }
 footer a:hover {
   text-decoration: underline;
+}
+
+.name-start-location {
+  width: 94%;
+  border: 2px solid #b9da05;
+}
+
+.date-end-type {
+  width: 94%;
+  border: 2px solid #b9da05;
+}
+
+.description {
+  width: 97%;
+  border: 2px solid #b9da05;
+}
+
+.MSC {
+  color: #60a5fa;
+}
+
+h3 {
+  color: white;
+}
+
+.event-title {
+  color: #b9da05;
+}
+
+option {
+  color: black;
+}
+
+.type {
+  border: 2px solid #b9da05;
+}
+
+.registration {
+  border: 2px solid #b9da05;
+}
+.restriction {
+  border: 2px solid #b9da05;
+}
+footer button {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  cursor: pointer;
 }
