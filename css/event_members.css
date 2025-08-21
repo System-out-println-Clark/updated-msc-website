@@ -529,7 +529,7 @@ footer {
   text-align: center;
   padding: 1.5rem 1rem;
   border-top: 1px solid #1f2937; /* Tailwind gray-800 */
-  width: 100vw; /* Full viewport width */
+  width: 100vw;
   position: relative;
   left: 50%;
   transform: translateX(-50%);
@@ -538,8 +538,8 @@ footer {
 .footer-container {
   display: flex;
   flex-direction: column;
-  justify-content: flex-end; /* pushes footer to bottom */
-  min-height: 14vh; /* full viewport height */
+  justify-content: flex-end;
+  min-height: 14vh;
   height: 100%;
 }
 
@@ -557,8 +557,8 @@ footer .logo-container img {
 
 footer p {
   color: #6b7280; /* Tailwind gray-500 */
-  font-size: 0.875rem; /* 14px */
-  margin: 0;
+  font-size: 0.875rem;
+  margin: 0 0 0.5rem 0;
 }
 
 footer .social-icons {
@@ -566,6 +566,22 @@ footer .social-icons {
   justify-content: center;
   gap: 1rem;
   margin-top: 0.5rem;
+}
+
+footer button {
+  background-color: #b9da05;
+  color: #00071c;
+  font-weight: bold;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px; /* rounded-full */
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  cursor: pointer;
+}
+
+footer button:hover {
+  background-color: white;
+  color: #00071c;
 }
 
 footer .social-icons a {
