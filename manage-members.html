@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Members</title>
+  <link rel="stylesheet" href="/updated-msc-website/css/manage-members.css">
+  <script src="https://kit.fontawesome.com/yourkitid.js" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div class="page-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <h3>Manage Members</h3>
+      <nav>
+        <ul>
+          <li><a href="add-member.html">➕ Add Member</a></li>
+          <li><a href="manage-members.html" class="active">👥 Manage Members</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Top Controls -->
+      <div class="top-controls">
+        <div class="left-controls">
+          <label for="bulkAction">With Selected:</label>
+          <select id="bulkAction">
+            <option>-- Select Action --</option>
+            <option value="delete">Delete Selected</option>
+            <option value="active">Set Status to Active</option>
+            <option value="inactive">Set Status to Inactive</option>
+          </select>
+          <button id="applyBtn">Apply</button>
+        </div>
+
+        <div class="right-controls">
+          <button id="filterBtn"><i class="fas fa-filter"></i> Filters (0 Members)</button>
+          <button id="exportBtn"><i class="fas fa-file-excel"></i> Export to Excel</button>
+          <button id="addBtn"><i class="fas fa-user-plus"></i> Add New Member</button>
+          <label for="rowsPerPage">Rows per page:</label>
+          <select id="rowsPerPage">
+            <option>5</option>
+            <option>25</option>
+            <option>50</option>
+            <option>75</option>
+            <option>100</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th><input type="checkbox" id="selectAll"></th>
+              <th>Membership ID</th>
+              <th>First Name</th>
+              <th>Middle Name</th>
+              <th>
+                Last Name
+                <button class="sort-btn" id="sortLastName"><i class="fas fa-sort"></i></button>
+              </th>
+              <th>Suffix</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Gender</th>
+              <th>Position</th>
+              <th>Student No.</th>
+              <th>Program</th>
+              <th>Year</th>
+              <th>College</th>
+              <th>Section</th>
+              <th>Address</th>
+              <th>Facebook</th>
+            </tr>
+          </thead>
+          <tbody id="membersTableBody">
+            <!-- JS will populate rows here -->
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <script src="manage-members.js"></script>
+</body>
+</html>

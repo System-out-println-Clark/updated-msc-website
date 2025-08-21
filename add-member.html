@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BulSU MSC | Add Members</title>
+  <link rel="stylesheet" href="/updated-msc-website/css/add-member.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <link rel="icon" href="./Logos/Bulsu MSC Logo-02.png" type="image/png">
+</head>
+<body>
+    <div id="successModal" class="modal">
+        <div class="modal-content">
+            <h3>✅ Member Added Successfully!</h3>
+            <button id="closeModal">OK</button>
+        </div>
+    </div>
+    <!-- Hamburger -->
+    <div class="hamburger" id="hamburger">
+    <span></span>
+    <span></span>
+    <span></span>
+    </div>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+
+    <div class="admin-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <!-- Logo -->
+        <div class="sidebar-logo">
+        <a href="admin_dashboard.html">
+            <img src="./Logos/Bulsu MSC Logo-02.png" alt="MSC Logo">
+        </a>
+        </div>
+
+        <!-- Role label -->
+        <h3 class="sidebar-role">BulSU MSC</h3>
+        
+        <div class="line"></div>
+        <!-- Navigation -->
+        <nav class="sidebar-nav">
+        <a href="admin_dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#b9da05] hover:text-[#011538] transition-colors">
+            <i class="fas fa-tachometer-alt"></i> Dashboard
+        </a>
+
+        <a href="add-member.html" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#b9da05] hover:text-[#011538] transition-colors">
+            <i class="fas fa-user-graduate"></i> Students
+        </a>
+
+        <a href="events.html" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#b9da05] hover:text-[#011538] transition-colors">
+            <i class="fas fa-calendar-alt"></i> Events
+        </a>
+        <a href="announcements.html" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#b9da05] hover:text-[#011538] transition-colors">
+            <i class="fas fa-bullhorn"></i> Announcements
+        </a>
+
+        <a href="committees.html" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#b9da05] hover:text-[#011538] transition-colors">
+            <i class="fas fa-cog"></i> Settings
+        </a>
+        </nav>
+
+        <!-- Footer label -->
+        <div class="sidebar-footer">
+        <p>© 2025 Bulacan State University - Microsoft Student Community</p>
+        </div>
+    </aside>
+
+    <div class="page-wrapper">
+        <h2>Add New Member</h2>
+
+        <div class="card">
+        <form id="addMemberForm">
+            <div class="form-row two-col">
+                <!-- Username -->
+                <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required>
+                </div>
+
+                <!-- Email -->
+                <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required>
+                </div>
+            </div>
+
+            <div class="form-row two-col">
+                <!-- Password -->
+                <div class="form-group">
+                <label for="regPassword">Password:</label>
+                <div class="password-wrapper">
+                    <input type="password" id="regPassword" name="password" required>
+                    <button type="button" class="toggle-password" data-target="regPassword">👁</button>
+                    
+                </div>
+                <div id="password-strength" class="password-strength"></div>
+                </div>
+            
+                <!-- Confirm Password -->
+                <div class="form-group">
+                <label for="confirmPassword">Confirm Password:</label>
+                <div class="password-wrapper">
+                    <input type="password" id="confirmPassword" name="confirmPassword" required>
+                    <button type="button" class="toggle-password" data-target="confirmPassword">👁</button>
+                </div>
+                </div>
+            </div>
+
+            <div class="form-row four-col">
+                <!-- First Name -->
+                <div class="form-group">
+                <label for="firstName">First Name:</label>
+                <input type="text" id="firstName" name="firstName" required>
+                </div>
+
+                <!-- Middle Name -->
+                <div class="form-group">
+                <label for="middleName">Middle Name:</label>
+                <input type="text" id="middleName" name="middleName">
+                </div>
+
+                <!-- Last Name -->
+                <div class="form-group">
+                <label for="lastName">Last Name:</label>
+                <input type="text" id="lastName" name="lastName" required>
+                </div>
+
+                <!-- Suffix -->
+                <div class="form-group">
+                <label for="suffix">Suffix:</label>
+                <select id="suffix" name="suffix">
+                    <option value="">None</option>
+                    <option value="Jr.">Jr.</option>
+                    <option value="Sr.">Sr.</option>
+                    <option value="I">I</option>
+                    <option value="II">II</option>
+                    <option value="III">III</option>
+                    <option value="IV">IV</option>
+                    <option value="V">V</option>
+                </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <!-- Birthdate -->
+                <div class="form-group">
+                <label for="birthdate">Birthdate:</label>
+                <input type="date" id="birthdate" name="birthdate" required>
+                </div>
+
+                <!-- Gender -->
+                <div class="form-group">
+                <label for="gender">Gender:</label>
+                <select id="gender" name="gender" required>
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                </select>
+                </div>
+
+                <!-- Phone -->
+                <div class="form-group">
+                <label for="phone">Phone Number:</label>
+                <input type="tel" id="phone" name="phone" placeholder="e.g. 09123456789" required>
+                </div>
+            </div>
+
+            <div class="form-row checkbox-row">
+                <!-- Adviser -->
+                <div class="form-group checkbox">
+                <label>
+                    <input type="checkbox" id="isAdviser" name="isAdviser"> Register as Adviser / Faculty
+                </label>
+                </div>
+            </div>
+
+            <div class="form-row three-col">
+                <!-- Student No -->
+                <div class="form-group">
+                <label for="studentNo">Student Number:</label>
+                <input type="text" id="studentNo" name="studentNo" required>
+                </div>
+
+                <!-- College -->
+                <div class="form-group">
+                <label for="regCollege">College:</label>
+                <select id="regCollege" name="college" required>
+                    <option value="">Select College</option>
+                </select>
+                </div>
+
+                <!-- Program -->
+                <div class="form-group">
+                <label for="regProgram">Program:</label>
+                <select id="regProgram" name="program" required disabled>
+                    <option value="">Select a College first</option>
+                </select>
+                </div>
+            </div>
+
+            <div class="form-row three-col">
+                <!-- Year Level -->
+                <div class="form-group">
+                <label for="yearLevel">Year Level:</label>
+                <select id="yearLevel" name="yearLevel" required>
+                    <option value="">Select Year</option>
+                    <option value="1st Year">1st Year</option>
+                    <option value="2nd Year">2nd Year</option>
+                    <option value="3rd Year">3rd Year</option>
+                    <option value="4th Year">4th Year</option>
+                </select>
+                </div>
+
+                <!-- Section -->
+                <div class="form-group">
+                <label for="section">Section:</label>
+                <input type="text" id="section" name="section" required>
+                </div>
+
+                <!-- Facebook -->
+                <div class="form-group">
+                <label for="facebook">Facebook Username (Optional):</label>
+                <input type="text" id="facebook" name="facebook">
+                </div>
+            </div>
+
+            <div class="form-row full">
+                <!-- Address -->
+                <div class="form-group">
+                <label for="address">Address (Optional):</label>
+                <textarea id="address" name="address" rows="2"></textarea>
+                </div>
+            </div>
+
+            <!-- Error box -->
+            <div id="error-box" class="error-box hidden"></div>
+
+            <!-- Add Member Button -->
+            <div class="form-actions">
+            <button type="submit" class="btn">Add Member</button>
+            </div>
+        </form>
+        </div>
+    </div>
+    </div>
+  <script src="add-member.js"></script>
+  <script>
+    const passwordInput = document.getElementById("regPassword");
+    const strengthText = document.getElementById("password-strength");
+
+    passwordInput.addEventListener("input", () => {
+    const val = passwordInput.value;
+    let strength = "weak";
+
+    if (val.length > 6 && /[A-Z]/.test(val) && /[0-9]/.test(val) && /[\W]/.test(val)) {
+        strength = "strong";
+    } else if (val.length > 4 && /[A-Z0-9]/.test(val)) {
+        strength = "medium";
+    }
+
+    strengthText.textContent = `Strength: ${strength}`;
+    strengthText.className = `password-strength ${strength}`;
+    });
+  </script>
+    <script>
+        const form = document.getElementById("addMemberForm"); // give your form an id
+        const modal = document.getElementById("successModal");
+        const closeModal = document.getElementById("closeModal");
+
+        form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        modal.style.display = "flex";
+        });
+
+        closeModal.addEventListener("click", () => {
+        modal.style.display = "none";
+        });
+    </script>
+    <script>
+    const hamburger = document.getElementById('hamburger');
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('overlay');
+
+    hamburger.addEventListener('click', () => {
+        sidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
+    });
+
+    overlay.addEventListener('click', () => {
+        sidebar.classList.remove('active');
+        overlay.classList.remove('active');
+    });
+    </script>
+</body>
+</html>
