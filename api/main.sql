@@ -98,6 +98,25 @@ CREATE TABLE IF NOT EXISTS password_resets (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+--Create committees table for msc committees
+CREATE TABLE IF NOT EXISTS committees (
+    committee_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) UNIQUE NOT NULL,
+    description TEXT
+);
+
+--Create committee_members table for linking students to committees
+CREATE TABLE IF NOT EXISTS committee_members (
+    officer_id INT(11) PRIMARY KEY AUTO_INCREMENT,
+    id INT(11) NOT NULL,
+    committee_id INT(11) NOT NULL,
+    position VARCHAR(100),
+    start_date DATE NOT NULL,
+    end_date DATE,
+    FOREIGN KEY(id) REFERENCES students(id),
+    FOREIGN KEY(committee_id) REFERENCES committees(committee_id)
+);
+
 -- Insert default settings
 INSERT INTO settings (key_name, value, description) VALUES
 ('school_year_code', '2526', 'Current school year code for ID generation'),
