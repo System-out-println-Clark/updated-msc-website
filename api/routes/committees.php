@@ -1,31 +1,59 @@
 <?php
 /**
- * Committees Routes
+ * Committee Routes
  */
 
 require_once __DIR__ . '/../controllers/CommitteeController.php';
 
 $controller = new CommitteeController();
 $method = $_SERVER['REQUEST_METHOD'];
-$url = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$segments = explode('/', trim($path, '/'));
 
-// GET /api/committees
-if ($method === 'GET' && preg_match('#^/updated-msc-website/api/committees$#', $url)) {
-    $controller->getAll();
+$apiIndex = array_search('api', $segments);
+$commIndex = array_search('committees', $segments);
 
-// GET /api/committees/{id}
-} elseif ($method === 'GET' && preg_match('#^/updated-msc-website/api/committees/(\d+)$#', $url, $matches)) {
-    $controller->getById($matches[1]);
+$id = null;
+if ($commIndex !== false) {
+    $id = $segments[$commIndex + 1] ?? null;
+    if ($id !== null && !is_numeric($id)) {
+        $id = null; // ignore non-numeric IDs
+    }
+}
 
-// POST /api/committees
-} elseif ($method === 'POST' && preg_match('#^/updated-msc-website/api/committees$#', $url)) {
-    $controller->create();
+switch ($method) {
+    case 'GET':
+        if ($id) {
+            $controller->getById($id);
+        } else {
+            $controller->getAll();
+        }
+        break;
 
-// PUT /api/committees/{id}
-} elseif ($method === 'PUT' && preg_match('#^/updated-msc-website/api/committees/(\d+)$#', $url, $matches)) {
-    $controller->update($matches[1]);
+    case 'POST':
+        $controller->create();
+        break;
 
-// DELETE /api/committees/{id}
-} elseif ($method === 'DELETE' && preg_match('#^/updated-msc-website/api/committees/(\d+)$#', $url, $matches)) {
-    $controller->delete($matches[1]);
+    case 'PUT':
+        if ($id) {
+            $controller->update($id);
+        } else {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Committee ID required for update']);
+        }
+        break;
+
+    case 'DELETE':
+        if ($id) {
+            $controller->delete($id);
+        } else {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Committee ID required for delete']);
+        }
+        break;
+
+    default:
+        http_response_code(405);
+        echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+        break;
 }

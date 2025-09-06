@@ -72,6 +72,10 @@ try {
         case 'announcements':
             require_once __DIR__ . '/routes/announcements.php';
             break;
+
+        case 'committees':
+            require_once __DIR__ . '/routes/committees.php';
+            break;
             
         case 'health':
             // Health check endpoint

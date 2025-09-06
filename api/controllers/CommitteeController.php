@@ -1,7 +1,6 @@
 <?php
 /**
  * Committee Controller
- * Handles committee operations (CRUD)
  */
 
 require_once __DIR__ . '/../config/cors.php';
@@ -21,9 +20,6 @@ class CommitteeController
         $this->committeeModel = new Committee();
     }
 
-    /**
-     * Get all committees
-     */
     public function getAll()
     {
         try {
@@ -34,99 +30,63 @@ class CommitteeController
         }
     }
 
-    /**
-     * Get committee by ID
-     */
     public function getById($id)
     {
         try {
             $committee = $this->committeeModel->findById($id);
-            if (!$committee) {
-                Response::notFound("Committee not found");
-            }
+            if (!$committee) Response::notFound("Committee not found");
             Response::success($committee);
         } catch (Exception $e) {
             Response::serverError($e->getMessage());
         }
     }
 
-    /**
-     * Create committee (Officer only)
-     */
     public function create()
     {
         try {
             AuthMiddleware::requireOfficer();
+
             $data = json_decode(file_get_contents("php://input"), true);
+            if (!$data) Response::validationError(['request' => 'Invalid JSON']);
 
-            if (!$data) {
-                Response::validationError(['request' => 'Invalid JSON or empty body']);
-            }
+            $errors = Validator::validateRequired($data, ['name']);
+            if (!empty($errors)) Response::validationError($errors);
 
-            $required = ['name'];
-            $errors = Validator::validateRequired($data, $required);
-            if (!empty($errors)) {
-                Response::validationError($errors);
-            }
-
-            $sanitized = Validator::sanitize($data);
-            $committee = $this->committeeModel->create($sanitized);
-
+            $committee = $this->committeeModel->create($data);
             Response::success($committee, "Committee created successfully", 201);
         } catch (Exception $e) {
             Response::serverError($e->getMessage());
         }
     }
 
-    /**
-     * Update committee (Officer only)
-     */
     public function update($id)
     {
         try {
             AuthMiddleware::requireOfficer();
-            $committee = $this->committeeModel->findById($id);
-            if (!$committee) {
-                Response::notFound("Committee not found");
-            }
 
             $data = json_decode(file_get_contents("php://input"), true);
-            if (!$data) {
-                Response::validationError(['request' => 'Invalid JSON or empty body']);
-            }
+            if (!$data) Response::validationError(['request' => 'Invalid JSON']);
 
-            $sanitized = Validator::sanitize($data);
-            $result = $this->committeeModel->update($id, $sanitized);
+            $committee = $this->committeeModel->findById($id);
+            if (!$committee) Response::notFound("Committee not found");
 
-            if ($result) {
-                $updated = $this->committeeModel->findById($id);
-                Response::success($updated, "Committee updated successfully");
-            } else {
-                Response::serverError("Failed to update committee");
-            }
+            $updated = $this->committeeModel->update($id, $data);
+            Response::success($updated, "Committee updated successfully");
         } catch (Exception $e) {
             Response::serverError($e->getMessage());
         }
     }
 
-    /**
-     * Delete committee (Officer only)
-     */
     public function delete($id)
     {
         try {
             AuthMiddleware::requireOfficer();
-            $committee = $this->committeeModel->findById($id);
-            if (!$committee) {
-                Response::notFound("Committee not found");
-            }
 
-            $result = $this->committeeModel->delete($id);
-            if ($result) {
-                Response::success(null, "Committee deleted successfully");
-            } else {
-                Response::serverError("Failed to delete committee");
-            }
+            $committee = $this->committeeModel->findById($id);
+            if (!$committee) Response::notFound("Committee not found");
+
+            $this->committeeModel->delete($id);
+            Response::success(null, "Committee deleted successfully");
         } catch (Exception $e) {
             Response::serverError($e->getMessage());
         }
