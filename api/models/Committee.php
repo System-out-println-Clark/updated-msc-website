@@ -17,15 +17,44 @@ class Committee
 
     public function getAll()
     {
-        $stmt = $this->db->prepare("SELECT * FROM committees ORDER BY committee_id DESC");
-        $stmt->execute();
-        $committees = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        try {
+            $stmt = $this->db->prepare("SELECT * FROM committees ORDER BY committee_id DESC");
+            $stmt->execute();
+            $committees = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        foreach ($committees as &$committee) {
-            $committee['members'] = $this->getMembers($committee['committee_id']);
+            foreach ($committees as &$committee) {
+                // 1. Get members
+                $committee['members'] = $this->getMembers($committee['committee_id']);
+
+                // 2. Get head info from head_id column
+                if (!empty($committee['head_id'])) {
+                    $stmt = $this->db->prepare("
+                        SELECT id, first_name, middle_name, last_name, name_suffix
+                        FROM students
+                        WHERE id = :id
+                    ");
+                    $stmt->execute(['id' => $committee['head_id']]);
+                    $head = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                    if ($head) {
+                        $committee['head'] = [
+                            'id' => $head['id'],
+                            'full_name' => trim($head['first_name'].' '.$head['middle_name'].' '.$head['last_name'].' '.$head['name_suffix'])
+                        ];
+                    } else {
+                        $committee['head'] = null;
+                    }
+                } else {
+                    $committee['head'] = null;
+                }
+            }
+
+
+            return $committees;
+        } catch (PDOException $e) {
+            error_log("Committee getAll error: " . $e->getMessage());
+            throw new Exception("Failed to fetch committees.");
         }
-
-        return $committees;
     }
 
     public function findById($id)
@@ -43,36 +72,59 @@ class Committee
 
     public function create($data)
     {
-        $stmt = $this->db->prepare("INSERT INTO committees (name, description) VALUES (:name, :description)");
-        $stmt->execute([
-            'name' => $data['name'],
-            'description' => $data['description'] ?? ''
-        ]);
+        try {
+            // Insert committee with head_id
+            $stmt = $this->db->prepare("
+                INSERT INTO committees (name, description, head_id) 
+                VALUES (:name, :description, :head_id)
+            ");
+            $stmt->execute([
+                'name' => $data['name'],
+                'description' => $data['description'] ?? '',
+                'head_id' => $data['head_id'] ?? null
+            ]);
 
-        $id = $this->db->lastInsertId();
+            $id = $this->db->lastInsertId();
 
-        if (!empty($data['members'])) {
-            $this->saveMembers($id, $data['members']);
+            // Save members if provided (excluding head if already assigned)
+            if (!empty($data['members'])) {
+                $this->saveMembers($id, $data['members']);
+            }
+
+            return $this->findById($id);
+        } catch (PDOException $e) {
+            error_log("Committee create error: " . $e->getMessage());
+            throw new Exception("Failed to create committee. Please check the data.");
         }
-
-        return $this->findById($id);
     }
 
     public function update($id, $data)
     {
-        $stmt = $this->db->prepare("UPDATE committees SET name = :name, description = :description WHERE committee_id = :id");
-        $stmt->execute([
-            'name' => $data['name'],
-            'description' => $data['description'] ?? '',
-            'id' => $id
-        ]);
+        try {
+            // Update committee info including head_id
+            $stmt = $this->db->prepare("
+                UPDATE committees 
+                SET name = :name, description = :description, head_id = :head_id 
+                WHERE committee_id = :id
+            ");
+            $stmt->execute([
+                'name' => $data['name'],
+                'description' => $data['description'] ?? '',
+                'head_id' => $data['head_id'] ?? null,
+                'id' => $id
+            ]);
 
-        if (isset($data['members'])) {
-            $this->deleteMembers($id);
-            $this->saveMembers($id, $data['members']);
+            // Update members if provided
+            if (isset($data['members'])) {
+                $this->deleteMembers($id);
+                $this->saveMembers($id, $data['members']);
+            }
+
+            return $this->findById($id);
+        } catch (PDOException $e) {
+            error_log("Committee update error: " . $e->getMessage());
+            throw new Exception("Failed to update committee. Please check the data.");
         }
-
-        return $this->findById($id);
     }
 
     public function delete($id)
@@ -86,9 +138,10 @@ class Committee
     private function getMembers($committeeId)
     {
         $stmt = $this->db->prepare("
-            SELECT cm.id, cm.student_id, cm.position, s.full_name 
+            SELECT cm.id AS student_id, cm.position, 
+                TRIM(CONCAT(s.first_name, ' ', s.middle_name, ' ', s.last_name, ' ', COALESCE(s.name_suffix, ''))) AS full_name
             FROM committee_members cm
-            JOIN students s ON s.id = cm.student_id
+            JOIN students s ON s.id = cm.id
             WHERE cm.committee_id = :committee_id
         ");
         $stmt->execute(['committee_id' => $committeeId]);
@@ -97,14 +150,22 @@ class Committee
 
     private function saveMembers($committeeId, $members)
     {
-        $stmt = $this->db->prepare("INSERT INTO committee_members (committee_id, student_id, position) VALUES (:committee_id, :student_id, :position)");
+        $stmt = $this->db->prepare(
+            "INSERT INTO committee_members (id, committee_id, position, start_date) 
+            VALUES (:student_id, :committee_id, :position, NOW())"
+        );
 
         foreach ($members as $m) {
-            $stmt->execute([
-                'committee_id' => $committeeId,
-                'student_id' => $m['student_id'],
-                'position' => $m['position'] ?? null
-            ]);
+            try {
+                if (empty($m['student_id'])) continue; // skip invalid entries
+                $stmt->execute([
+                    'student_id' => $m['student_id'],
+                    'committee_id' => $committeeId,
+                    'position' => $m['position'] ?? null
+                ]);
+            } catch (PDOException $e) {
+                error_log("Failed to add member (student_id={$m['student_id']}): " . $e->getMessage());
+            }
         }
     }
 

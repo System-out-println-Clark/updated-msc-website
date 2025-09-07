@@ -11,6 +11,11 @@ require_once __DIR__ . '/../middleware/AuthMiddleware.php';
 
 CorsConfig::setup();
 
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+
 class CommitteeController
 {
     private $committeeModel;
@@ -26,7 +31,8 @@ class CommitteeController
             $committees = $this->committeeModel->getAll();
             Response::success($committees);
         } catch (Exception $e) {
-            Response::serverError($e->getMessage());
+            error_log("CommitteeController getAll() error: " . $e->getMessage());
+            Response::serverError("Failed to fetch committees.");
         }
     }
 
