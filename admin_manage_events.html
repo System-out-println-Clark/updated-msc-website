@@ -1741,7 +1741,12 @@
                 event_status: "upcoming",
                 event_image_url: eventImagePath,
                 event_batch_image: badgeImagePath,
-                capacity: parseInt(document.getElementById("capacity")?.value || "0", 10)
+                capacity: (() => {
+                    const v = document.getElementById("capacity")?.value;
+                    if (v === "") return null; // empty input means unlimited
+                    const n = parseInt(v, 10);
+                    return isNaN(n) ? null : n; // return 0 if input is "0", null if invalid
+                })()
             };
 
             //console.log("New Event:", newEvent);
@@ -1890,7 +1895,7 @@
             document.getElementById("edit_capacity").value = evt.capacity || "";
             document.getElementById("event_status").value = evt.event_status;
             document.getElementById("event_type").value = evt.event_type;
-            document.getElementById("event_restriction").value = evt.event_restriction || "public";
+            document.getElementById("event_restriction").value = evt.event_restriction;
             //document.getElementById("registration_required").checked = evt.registration_required === 1;
             document.getElementById("edit_registration_required").checked = evt.registration_required === 1;
             //console.log(evt.location);
@@ -1963,9 +1968,15 @@
                 event_status: document.getElementById("event_status").value,
                 event_type: document.getElementById("event_type").value,
                 event_restriction: document.getElementById("event_restriction").value,
+                event_restriction: document.getElementById("event_restriction").value,
                 registration_required: document.getElementById("edit_registration_required").checked ? 1 : 0,
                 description: document.getElementById("description").value,
-                capacity: document.getElementById("edit_capacity")?.value || '0'
+                capacity: (() => {
+                    const v = document.getElementById("capacity")?.value;
+                    if (v === "" || v == null) return null; // treat empty as "unlimited"
+                    const n = parseInt(v, 10);
+                    return isNaN(n) ? null : n;
+                })()
             };
 
             if (eventImagePath) payload.event_image_url = eventImagePath;
@@ -2031,7 +2042,7 @@
                                 <div class="event-meta">
                                     <span><i class="bi bi-calendar"></i> ${formattedDateTime}</span>
                                     <span><i class="bi bi-geo-alt"></i> ${evt.location} </span>
-                                    <span><i class="bi bi-people"></i> ${evt.attendants || 0} / ${evt.capacity || 0}</span>
+                                    <span><i class="bi bi-people"></i> ${evt.attendants || 0} / ${ (evt.capacity === null || evt.capacity === undefined) ? Number.MAX_SAFE_INTEGER : evt.capacity }</span>
                                     <span class="event-status status-upcoming"> ${evt.event_status} </span>
                                 </div>
                                 <div class="event-actions">

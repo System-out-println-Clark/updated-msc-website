@@ -1,3 +1,7 @@
+<?php include '_header.php'; ?>
+
+<div class="flex flex-col min-h-screen">
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -384,6 +388,23 @@
             transform: translateY(-2px);
         }
 
+        .cancel-btn {
+            background: #b9da05;
+            color: #011538;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s;
+        }
+
+        .cancel-btn:hover {
+            background: #9abc04;
+            transform: translateY(-2px);
+        }
+
         .footer-container {
             margin-top: auto;
         }
@@ -755,39 +776,6 @@
     </style>
 </head>
 <body id="main-body">
-    <nav class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out py-4" id="main-header">
-        <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
-            <a class="flex items-center space-x-2 text-white transition-colors duration-300 hover:text-[#b9da05]"
-                href="index.php">
-                <img alt="BULSU MSC Logo" class="h-12" src="./Logos/Bulsu MSC Logo-02.png" />
-            </a>
-            <div class="hidden md:flex items-center space-x-8">
-                <a href="dashboard.html"
-                    class="nav-link font-semibold transition-colors duration-300 hover:text-[#b9da05] cursor-pointer">Home</a>
-                <a href="announcements.php"
-                    class="nav-link font-semibold transition-colors duration-300 hover:text-[#b9da05] cursor-pointer">Announcements</a>
-                <a href="events-and-register-events.html"
-                    class="nav-link font-semibold transition-colors duration-300 hover:text-[#b9da05] cursor-pointer">Events</a>
-
-                <a href="edit_profile.html" class="nav-icon-wrapper">
-                    <i class="fa-solid fa-circle-user nav-icon"></i>
-                </a>
-
-                <a href="calendar.html" class="nav-icon-wrapper">
-                    <i class="fa-solid fa-calendar-days nav-icon"></i>
-                </a>
-
-                <a href="settings.html" class="nav-icon-wrapper">
-                    <i class="fa-solid fa-gear nav-icon"></i>
-                </a>
-            </div>
-            <div class="md:hidden flex items-center space-x-4">
-                <button class="text-gray-300 hover:text-[#b9da05] focus:outline-none" id="mobile-menu-button">
-                    <i class="fas fa-bars text-2xl transition-transform duration-300" id="mobile-menu-icon"></i>
-                </button>
-            </div>
-        </div>
-    </nav>
 
     <div id="mobile-sidebar"
         class="fixed top-[64px] left-0 w-64 h-[calc(100%-64px)] bg-[#00071c] bg-opacity-100 backdrop-blur-md z-40 transform -translate-x-full transition-transform duration-300 ease-in-out md:hidden">
@@ -844,7 +832,7 @@
             </div>
         </div>
 
-        <main>
+        <main class="flex-grow pt-28 p-3 flex justify-center">
             <section id="upcomingSection" class="event-section">
                 <div class="event-list">
                 </div>
@@ -867,31 +855,14 @@
         </div>
     </div>
 
-    <div class="footer-container">
-        <footer class="bg-[#00071c] text-center p-6 border-t border-gray-800">
-            <div class="flex justify-center space-x-1 mb-1">
-                <a href="https://www.bulsu.edu.ph" target="_blank" rel="noopener noreferrer"><img src="./Logos/BulSU.png" alt="Bulacan State University Logo" class="h-10"></a>
-                <a href="https://www.facebook.com/osobulsu" target="_blank" rel="noopener noreferrer"><img src="./Logos/OSOA.png" alt="Bulacan State University OSOA Logo" class="h-10 w-10"></a>
-            </div>
-            <p class="text-gray-500 text-sm">&copy; 2025 BulSU Microsoft Student Community. All rights reserved.</p>
-            <div class="flex justify-center space-x-4 mt-2">
-                <a href="https://www.facebook.com/bulsu.officialmsc" target="_blank" class="text-gray-400 hover:text-[#b9da05] transition-colors duration-300"><i class="fab fa-facebook-f"></i></a>
-                <a href="https://www.instagram.com/bulsumsc/" target="_blank" class="text-gray-400 hover:text-[#b9da05] transition-colors duration-300"><i class="fab fa-instagram"></i></a>
-                <a href="https://www.threads.com/@bulsumsc" target="_blank" class="text-gray-400 hover:text-[#b9da05] transition-colors duration-300"><i class="fab fa-threads"></i></a>
-                <a href="https://www.tiktok.com/@bulsumsc" target="_blank" class="text-gray-400 hover:text-[#b9da05] transition-colors duration-300"><i class="fab fa-tiktok"></i></a>
-                <a href="https://www.linkedin.com/company/bulsumsc/" target="_blank" class="text-gray-400 hover:text-[#b9da05] transition-colors duration-300"><i class="fab fa-linkedin"></i></a>
-                <a href="https://www.github.com/bulsumsc" target="_blank" class="text-gray-400 hover:text-[#b9da05] transition-colors duration-300"><i class="fab fa-github"></i></a>
-            </div>
-        </footer>
-    </div>
-
     <div id="messageModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" id="messageCloseBtn">&times;</span>
             <p id="messageText"></p>
         </div>
     </div>
-
+    <?php include '_footer.php'; ?>
+</div>
     <script>
     const API_BASE = "/updated-msc-website/api";
 
@@ -1150,17 +1121,15 @@
             const modalDesc = document.getElementById("modalContent");
             const registerBtn = document.getElementById("registerBtn");
 
-            // Set modal info
+            // Set event info
             modalTitle.textContent = card.dataset.title;
             modalDate.textContent = card.dataset.date;
             modalDesc.textContent = card.dataset.content;
 
             registerBtn.dataset.eventId = card.dataset.id;
-            registerBtn.style.display = (card.dataset.status?.toLowerCase() === "upcoming") 
-                ? "inline-block" 
-                : "none";
+            registerBtn.style.display = (card.dataset.status?.toLowerCase() === "upcoming") ? "inline-block" : "none";
 
-            // ✅ Check login & registration status immediately
+            // ✅ Check login and registration status immediately
             let isRegistered = false;
             try {
                 const authStatus = await apiCall("/auth/check-login", "GET");
@@ -1181,24 +1150,22 @@
                 cancelBtn = document.createElement("button");
                 cancelBtn.id = "cancelPreRegister";
                 cancelBtn.textContent = "Cancel Pre-Registration";
-                cancelBtn.className = "register-btn"; 
-                modal.querySelector(".modal-content").appendChild(cancelBtn);
+                cancelBtn.className = "register-btn"; // reuse button style
+                modalContent.appendChild(cancelBtn);
             }
 
-            // ✅ Show cancel if already registered
+            // Always show the Cancel Pre-Register button if the user is registered
             cancelBtn.style.display = isRegistered ? "inline-block" : "none";
 
-            // ✅ Cancel Pre-Registration Logic
+            // Cancel button logic (leave as-is)
             cancelBtn.onclick = async () => {
                 const authStatus = await apiCall("/auth/check-login", "GET");
                 if (!authStatus?.success || !authStatus?.data?.logged_in) {
                     showMessage('Please <a href="login.html" class="text-blue-500">log in</a> first.');
                     return;
                 }
-
-                const userId = authStatus.data.user?.id;
+                const userId = authStatus.data.user_id;
                 const result = await apiCall(`/events/${card.dataset.id}/cancel-pre-registration`, "POST", { user_id: userId });
-
                 if (result?.success) {
                     showMessage(result.message || "✅ Registration canceled.");
                     cancelBtn.style.display = "none";
@@ -1209,46 +1176,59 @@
                 }
             };
 
-            // ✅ Register button logic (merged from your newer code)
-            registerBtn.onclick = async () => {
+            modal.style.display = "flex";
+        });
+        });
+
+
+            closeBtn.addEventListener("click", () => modal.style.display = "none");
+            modal.addEventListener("click", e => { if (e.target === modal) modal.style.display = "none"; });
+
+            registerBtn.addEventListener("click", async () => {
                 const eventId = registerBtn.dataset.eventId;
                 const eventCard = document.querySelector(`.event-card[data-id='${eventId}']`);
-                if (!eventId || !eventCard) return showMessage("⚠ Event not found.");
+                if (!eventId || !eventCard) {
+                    showMessage("⚠ Event not found.");
+                    return;
+                }
 
+                // ✅ Check login
                 const authStatus = await apiCall("/auth/check-login", "GET");
                 const isLoggedIn = authStatus?.success && authStatus.data?.logged_in;
 
+                // Access level map
+                const accessMap = {
+                    public: "open for public",
+                    members: "members only",
+                    bulsuans: "BulSUans only",
+                    inviteOnly: "invite only"
+                };
+                const eventAccess = accessMap[eventCard.dataset.access] || "open for public";
+
+                // Not logged in → show appropriate form
                 if (!isLoggedIn) {
-                    // Not logged in → handle by restriction type
                     if (eventCard.dataset.access === "public") return showPreRegisterFormInsideModal(eventId);
                     if (eventCard.dataset.access === "bulsuans") return showBulSUPreRegisterForm(eventId);
                     if (eventCard.dataset.access === "members")
                         return showMessage('This event is for members only. Please <a href="login.html" class="text-blue-500">log in</a> to register.');
-                    return showMessage("🚫 Restricted event.");
+                    return showMessage(`🚫 This event is restricted to "${eventAccess}" users only.`);
                 }
 
-                // ✅ Already registered → allow cancellation instead
-                const checkRes = await apiCall(`/events/${eventId}/registration-status`, "GET");
-                const alreadyRegistered = checkRes?.success && checkRes.data?.is_registered;
-                if (alreadyRegistered) {
-                    const confirmCancel = confirm("You are already registered for this event. Would you like to cancel your registration?");
-                    if (!confirmCancel) return;
-                    const cancelRes = await apiCall(`/events/${eventId}/cancel-registration`, "DELETE");
-                    if (cancelRes?.success) {
-                        showMessage(cancelRes.message || "Registration cancelled successfully.");
-                        eventCard.dataset.registered = "false";
-                        cancelBtn.style.display = "none";
-                    } else {
-                        showMessage(cancelRes?.message || "Failed to cancel registration.");
-                    }
+                // ✅ If user is logged in, continue with registration
+                if (parseInt(eventCard.dataset.registeredCount) >= parseInt(eventCard.dataset.capacity)) {
+                    showMessage("⚠ Sorry, this event is already full.");
                     return;
                 }
+                
 
-                // ✅ Not yet registered → proceed with registration
+                // ✅ Logged-in users
                 let payload = {};
+
                 try {
+                    // Get user info
                     const userId = authStatus.data.user.id;
                     const studentRes = await apiCall(`/students/${userId}`, "GET");
+
                     if (studentRes.success && studentRes.data) {
                         const s = studentRes.data;
                         payload = {
@@ -1267,92 +1247,30 @@
                             section: s.section || "",
                             user_type: s.role || "bulsuan",
                         };
+                    } else {
+                        console.warn("Could not fetch student info — using fallback empty data.");
                     }
                 } catch (err) {
                     console.error("Error fetching student profile:", err);
                 }
 
+                // Prevent empty data
                 if (!payload.first_name || !payload.last_name || !payload.email) {
                     showMessage("⚠ Could not load your BulSU profile. Please re-login and try again.");
                     return;
                 }
 
+                // ✅ Send registration data
                 const result = await apiCall(`/events/${eventId}/register`, "POST", payload);
+
                 if (result?.success) {
-                    showMessage(result.message || "Registered successfully!");
-                    eventCard.dataset.registered = "true";
-                    cancelBtn.style.display = "inline-block";
-                } else {
-                    showMessage(result?.message || "Registration failed.");
-                }
-            };
-
-            modal.style.display = "flex";
-        });
-        });
-
-
-            closeBtn.addEventListener("click", () => modal.style.display = "none");
-            modal.addEventListener("click", e => { if (e.target === modal) modal.style.display = "none"; });
-
-            registerBtn.addEventListener("click", async () => {
-                const eventId = registerBtn.dataset.eventId;
-                const eventCard = document.querySelector(`.event-card[data-id='${eventId}']`);
-
-                if (!eventId || !eventCard) {
-                    showMessage("⚠ Event not found.");
-                    return;
-                }
-
-                // ✅ Check if the user is logged in
-                const authStatus = await apiCall("/auth/check-login", "GET");
-                const isLoggedIn = authStatus && authStatus.success && authStatus.data && authStatus.data.logged_in;
-
-                // ✅ Determine event access level (for later use)
-            const accessMap = {
-                public: "open for public",
-                members: "members only",
-                bulsuans: "BulSUans only",
-                inviteOnly: "invite only"
-            };
-
-            const eventAccess = accessMap[eventCard.dataset.access] || "open for public";
-
-                    if (!isLoggedIn) {
-                        if (eventCard.dataset.access === "public") {
-                            showPreRegisterFormInsideModal(eventId);
-                        } else if (eventCard.dataset.access === "bulsuans") {
-                            showBulSUPreRegisterForm(eventId);
-                        } else if (eventCard.dataset.access === "members") {
-                            showMessage('This event is for members only. Please <a href="login.html" class="text-blue-500">log in</a> to register.');
-                        } else {
-                            showMessage(`🚫 This event is restricted to "${eventAccess}" users only.`);
-                        }
-                        return;
-                    } else {
-                        if (eventCard.dataset.access === "members") {
-                            handleMembersOnlyRegistration(eventId);
-                        } else if (eventCard.dataset.access === "public") {
-                            showPreRegisterFormInsideModal(eventId);
-                        } else if (eventCard.dataset.access === "bulsuans") {
-                            showBulSUPreRegisterForm(eventId);
-                        }
-                    }
-                // ✅ If user is logged in, continue with registration
-                if (parseInt(eventCard.dataset.registeredCount) >= parseInt(eventCard.dataset.capacity)) {
-                    showMessage("⚠ Sorry, this event is already full.");
-                    return;
-                }
-
-                const result = await apiCall(`/events/${eventId}/register`, "POST", {}, `✅ Register for Event #${eventId}`);
-
-                if (result && result.success) {
                     showMessage(result.message || "Registered successfully!");
                     eventCard.dataset.registered = "true";
                 } else {
                     showMessage(result?.message || "Registration failed.");
                 }
             });
+
 
         function showPreRegisterFormInsideModal(eventId) {
             const modal = document.getElementById("eventModal");
