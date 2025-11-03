@@ -98,7 +98,7 @@ class StudentController
 
             // Students can only update their own profile, officers can update any
             $currentUser = AuthMiddleware::getCurrentUser();
-            if ($currentUser['role'] !== 'officer' && $currentUserId != $id) {
+            if ($currentUser['role'] !== 'admin' && $currentUserId != $id) {
                 Response::error('Insufficient privileges', 403);
             }
 

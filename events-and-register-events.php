@@ -255,6 +255,22 @@
     background: rgba(0, 0, 0, 0.9);
 }
 
+.pre-register-container .form-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+button.register-btn.cancel-btn {
+    background-color: #ccc;
+    color: #000;
+}
+
+button.register-btn.cancel-btn:hover {
+    background-color: #aaa;
+}
+
 .register-btn {
     background: #b9da05;
     color: #000;
@@ -278,7 +294,7 @@
     color: white;
     padding: 2rem;
     overflow-y: auto;
-    max-height: 85vh;
+    max-height: 60vh;
     grid-column: 1 / -1;
 }
 
@@ -468,20 +484,23 @@
             <p class="date" id="modalDate"></p>
             <p id="modalContent"></p>
             <button id="registerBtn" class="register-btn" style="display:none;">Register Now</button>
+            <button id="cancelPreRegisterGlobal" class="register-btn cancel-btn" style="display: none;">
+    Cancel Pre-Registration
+</button>
         </div>
     </div>
 </div>
 
-<div id="messageModal" class="modal">
+<div id="messageModal" class="modal" style="display:none;">
     <div class="modal-content">
         <span class="close-btn" id="messageCloseBtn">&times;</span>
         <div class="modal-body">
-            <p id="messageText"></p>
+            <div id="messageInner"></div>
         </div>
     </div>
 </div>
 
-<!-- All your existing scripts remain exactly the same -->
+<!-- All your existing scripts remain exactly the same (but with JS fixes below) -->
 <script>
     const API_BASE = "/updated-msc-website/api";
     
@@ -538,7 +557,7 @@
             });
 
             renderEvents(upcomingEvents, "upcomingSection");
-            renderEvents(completedEvents, "completedSection");
+            renderEvents(completedEvents, "pastSection");
             renderEvents(pastEvents, "pastSection");
 
             attachCardListeners();
@@ -580,28 +599,7 @@
                 </div>
             `;
 
-            card.addEventListener("click", () => {
-                document.getElementById("modalTitle").textContent = card.dataset.title;
-                document.getElementById("modalDate").textContent = card.dataset.date;
-                document.getElementById("modalContent").textContent = card.dataset.content;
-
-                // Update modal image
-                const modalImage = document.getElementById("modalImage");
-                if (card.dataset.image) {
-                    modalImage.innerHTML = `<img src="${card.dataset.image}" alt="Event Image" />`;
-                } else {
-                    modalImage.innerHTML = `<i class="bi bi-calendar-event"></i>`;
-                }
-
-                const registerBtn = document.getElementById("registerBtn");
-                registerBtn.dataset.eventId = card.dataset.id;
-                registerBtn.style.display = (card.dataset.status.toLowerCase() === "upcoming") ?
-                    "inline-block" :
-                    "none";
-
-                document.getElementById("eventModal").style.display = "flex";
-            });
-
+            // No inline click here — listeners attached in attachCardListeners()
             section.appendChild(card);
         });
     }
@@ -609,8 +607,27 @@
     window.addEventListener("DOMContentLoaded", loadEvents);
 </script>
 
-<!-- Keep all your existing scripts below -->
+<!-- Keep all your existing scripts below (modified for correct registration logic) -->
 <script>
+    // Helper modal functions (used for guest prompts)
+    function showModal(html) {
+        const messageModal = document.getElementById("messageModal");
+        const inner = document.getElementById("messageInner");
+        inner.innerHTML = html;
+        messageModal.style.display = "flex";
+
+        // attach close handler to close icon
+        const closeIcon = document.getElementById("messageCloseBtn");
+        closeIcon.onclick = () => closeModal();
+    }
+
+    function closeModal() {
+        const messageModal = document.getElementById("messageModal");
+        messageModal.style.display = "none";
+        document.getElementById("messageInner").innerHTML = "";
+    }
+
+    // keep your existing DOM ready block (we don't change it)
     document.addEventListener("DOMContentLoaded", async () => {
         try {
             const eventsData = await apiCall("/events?page=1&limit=100", "GET");
@@ -677,537 +694,765 @@
     });
 </script>
 
-<!-- Keep all remaining scripts exactly as they were -->
+<!-- Main registration logic and listeners -->
 <script>
-        function attachCardListeners() {
-            const modal = document.getElementById("eventModal");
-            const closeBtn = document.querySelector(".close-btn");
-            const registerBtn = document.getElementById("registerBtn");
+    function attachCardListeners() {
+        const modal = document.getElementById("eventModal");
+        const closeBtn = document.querySelector("#eventModal .close-btn");
+        const registerBtn = document.getElementById("registerBtn");
+        const cancelBtnGlobal = document.getElementById("cancelPreRegisterGlobal");
 
+        // Make sure to rebind listeners - call this after renderEvents
         document.querySelectorAll(".event-card").forEach(card => {
-        card.addEventListener("click", async () => {
-            const modal = document.getElementById("eventModal");
-            const modalTitle = document.getElementById("modalTitle");
-            const modalDate = document.getElementById("modalDate");
-            const modalDesc = document.getElementById("modalContent");
-            const registerBtn = document.getElementById("registerBtn");
+            card.addEventListener("click", async (e) => {
+                e.stopPropagation();
 
-            modalTitle.textContent = card.dataset.title;
-            modalDate.textContent = card.dataset.date;
-            modalDesc.textContent = card.dataset.content;
+                const eventId = card.dataset.id;
+                const modalTitle = document.getElementById("modalTitle");
+                const modalDate = document.getElementById("modalDate");
+                const modalDesc = document.getElementById("modalContent");
 
-            registerBtn.dataset.eventId = card.dataset.id;
-            registerBtn.style.display = (card.dataset.status?.toLowerCase() === "upcoming") ? "inline-block" : "none";
+                modalTitle.textContent = card.dataset.title;
+                modalDate.textContent = card.dataset.date;
+                modalDesc.textContent = card.dataset.content;
 
-            let isRegistered = false;
-            try {
-                const authStatus = await apiCall("/auth/check-login", "GET");
-                if (authStatus?.success && authStatus?.data?.logged_in) {
-                    const regStatus = await apiCall(`/events/${card.dataset.id}/is-registered`, "GET");
-                    if (regStatus?.success && regStatus?.data?.registered) {
-                        isRegistered = true;
-                        card.dataset.registered = "true";
-                    }
-                }
-            } catch (err) {
-                console.warn("Could not verify registration status:", err);
-            }
-
-            let cancelBtn = document.getElementById("cancelPreRegister");
-            if (!cancelBtn) {
-                cancelBtn = document.createElement("button");
-                cancelBtn.id = "cancelPreRegister";
-                cancelBtn.textContent = "Cancel Pre-Registration";
-                cancelBtn.className = "register-btn";
-                modal.querySelector(".modal-content").appendChild(cancelBtn);
-            }
-
-            cancelBtn.style.display = isRegistered ? "inline-block" : "none";
-
-            cancelBtn.onclick = async () => {
-                const authStatus = await apiCall("/auth/check-login", "GET");
-                if (!authStatus?.success || !authStatus?.data?.logged_in) {
-                    showMessage('Please <a href="login.php" class="text-blue-500">log in</a> first.');
-                    return;
-                }
-                const userId = authStatus.data.user_id;
-                const result = await apiCall(`/events/${card.dataset.id}/cancel-pre-registration`, "POST", { user_id: userId });
-                if (result?.success) {
-                    showMessage(result.message || "✅ Registration canceled.");
-                    cancelBtn.style.display = "none";
-                    registerBtn.style.display = "inline-block";
-                    card.dataset.registered = "false";
+                // Update modal image
+                const modalImage = document.getElementById("modalImage");
+                if (card.dataset.image) {
+                    modalImage.innerHTML = `<img src="${card.dataset.image}" alt="Event Image" />`;
                 } else {
-                    showMessage(result?.message || "Cancellation failed.");
-                }
-            };
-
-            modal.style.display = "flex";
-        });
-        });
-
-
-            closeBtn.addEventListener("click", () => modal.style.display = "none");
-            modal.addEventListener("click", e => { if (e.target === modal) modal.style.display = "none"; });
-
-            registerBtn.addEventListener("click", async () => {
-                const eventId = registerBtn.dataset.eventId;
-                const eventCard = document.querySelector(`.event-card[data-id='${eventId}']`);
-                if (!eventId || !eventCard) {
-                    showMessage("⚠ Event not found.");
-                    return;
+                    modalImage.innerHTML = `<i class="bi bi-calendar-event"></i>`;
                 }
 
-                const authStatus = await apiCall("/auth/check-login", "GET");
-                const isLoggedIn = authStatus?.success && authStatus.data?.logged_in;
+                // Reset buttons
+                registerBtn.style.display = "none";
+                cancelBtnGlobal.style.display = "none";
+                registerBtn.dataset.eventId = eventId;
 
-                const accessMap = {
-                    public: "open for public",
-                    members: "members only",
-                    bulsuans: "BulSUans only",
-                    inviteOnly: "invite only"
-                };
-                const eventAccess = accessMap[eventCard.dataset.access] || "open for public";
-
-                if (!isLoggedIn) {
-                    if (eventCard.dataset.access === "public") return showPreRegisterFormInsideModal(eventId);
-                    if (eventCard.dataset.access === "bulsuans") return showBulSUPreRegisterForm(eventId);
-                    if (eventCard.dataset.access === "members")
-                        return showMessage('This event is for members only. Please <a href="login.php" class="text-blue-500">log in</a> to register.');
-                    return showMessage(`🚫 This event is restricted to "${eventAccess}" users only.`);
-                }
-
-                if (parseInt(eventCard.dataset.registeredCount) >= parseInt(eventCard.dataset.capacity)) {
-                    showMessage("⚠ Sorry, this event is already full.");
-                    return;
-                }
-
-                let payload = {};
-
+                // Check login status
+                let authStatus = null;
                 try {
-                    const userId = authStatus.data.user.id;
-                    const studentRes = await apiCall(`/students/${userId}`, "GET");
+                    authStatus = await apiCall("/auth/check-login", "GET");
+                } catch (err) {
+                    console.error("Auth check error:", err);
+                }
 
-                    if (studentRes.success && studentRes.data) {
-                        const s = studentRes.data;
-                        payload = {
-                            first_name: s.first_name,
-                            last_name: s.last_name,
-                            middle_name: s.middle_name || "",
-                            suffix: s.name_suffix || "",
-                            gender: s.gender,
-                            email: s.email,
-                            phone: s.phone || "",
-                            facebook: s.facebook_link || "",
-                            student_id: s.student_no,
-                            program: s.program || "",
-                            college: s.college || "",
-                            year_level: s.year_level || "",
-                            section: s.section || "",
-                            user_type: s.role || "bulsuan",
+            if (authStatus?.success && authStatus?.data?.logged_in) {
+                // Logged in: use email to check registration
+                const email = authStatus.data.user?.email;
+                console.log("Logged-in user email:", email);
+                try {
+                    const checkEndpoint = `/events/${eventId}/check-registration-email?email=${email}`;
+                    const regStatus = await apiCall(checkEndpoint, "GET");
+
+                    // Controller returns { success:true, registered: boolean }
+                    const isRegistered =
+                        regStatus?.success &&
+                        (regStatus.data?.registered === true ||
+                        regStatus.data?.registered === "1" ||
+                        regStatus.data?.registered === 1);
+
+
+                    console.log("Registration check response:", regStatus, "isRegistered:", isRegistered);
+
+
+                    if (isRegistered) {
+                        // Show cancel pre-registration for logged-in users
+                        cancelBtnGlobal.style.display = "inline-block";
+                        console.log("Cancel button element:", cancelBtnGlobal);
+                        registerBtn.style.display = "none";
+
+                        // Attach cancel logic (ensure single binding)
+                        cancelBtnGlobal.onclick = async (ev) => {
+                            ev.preventDefault();
+                            ev.stopPropagation();
+
+                            try {
+                                const payload = { email }; // ✅ use email only
+                                const result = await apiCall(
+                                    `/events/${eventId}/cancel-pre-registration`,
+                                    "POST",
+                                    payload
+                                );
+
+                                if (result?.success) {
+                                    showMessage('<p class="text-white">✅ Pre-registration cancelled successfully.</p>');
+                                    modal.style.display = "none";
+                                    setTimeout(() => window.location.reload(), 800);
+                                } else {
+                                    showMessage(`<p class="text-white">❌ ${result?.message || "Failed to cancel pre-registration"}</p>`);
+                                }
+                            } catch (err) {
+                                console.error("Cancel error:", err);
+                                showMessage('<p class="text-white">❌ Error cancelling registration.</p>');
+                            }
                         };
                     } else {
-                        console.warn("Could not fetch student info — using fallback empty data.");
+                        // Not yet registered — allow registration
+                        cancelBtnGlobal.style.display = "none";
+                        registerBtn.style.display =
+                            card.dataset.status?.toLowerCase() === "upcoming"
+                                ? "inline-block"
+                                : "none";
                     }
+
+                    } catch (err) {
+                        console.error("Error checking user registration:", err);
+                        // fallback: show register button if upcoming
+                        registerBtn.style.display = (card.dataset.status?.toLowerCase() === "upcoming") ? "inline-block" : "none";
+                    }
+                } else {
+                    // Not logged in (guest) -> show register button to open form
+                    registerBtn.style.display = (card.dataset.status?.toLowerCase() === "upcoming") ? "inline-block" : "none";
+                    cancelBtnGlobal.style.display = "none";
+                    // cancel handler hidden for guests here (cancellation from guest is via form)
+                    cancelBtnGlobal.onclick = null;
+                }
+
+                // show modal
+                modal.style.display = "flex";
+            });
+        });
+
+        // modal close
+        closeBtn.addEventListener("click", () => {
+            const modal = document.getElementById("eventModal");
+            modal.style.display = "none";
+        });
+        document.getElementById("eventModal").addEventListener("click", e => { if (e.target === document.getElementById("eventModal")) document.getElementById("eventModal").style.display = "none"; });
+
+    // Register button handler — route based on restriction type
+    registerBtn.addEventListener("click", async () => {
+        const eventId = registerBtn.dataset.eventId;
+        if (!eventId) return;
+
+        const eventCard = document.querySelector(`.event-card[data-id='${eventId}']`);
+        const restriction = eventCard?.dataset?.access?.toLowerCase() || "public";
+
+        // ✅ Check if event is full
+        const registered = parseInt(eventCard?.dataset?.registeredCount || "0");
+        const capacity = parseInt(eventCard?.dataset?.capacity || "0");
+        if (capacity === 0 || registered >= capacity) {
+            showMessage(`<p class="text-white">⚠ Sorry, this event is already full.</p>`);
+            setTimeout(() => window.location.reload(), 800);
+            return;
+        }
+
+    // Continue as normal
+    const auth = await apiCall("/auth/check-login", "GET");
+    const isLoggedIn = auth?.success && auth?.data?.logged_in;
+
+            let profileData = null;
+            if (isLoggedIn) {
+                try {
+                    const studentId = auth.data.user?.id;
+                    const studentRes = await apiCall(`/students/${studentId}`, "GET");
+                    if (studentRes?.success && studentRes.data) profileData = studentRes.data;
                 } catch (err) {
-                    console.error("Error fetching student profile:", err);
+                    console.error("Error fetching profile:", err);
                 }
-
-                if (!payload.first_name || !payload.last_name || !payload.email) {
-                    showMessage("⚠ Could not load your BulSU profile. Please re-login and try again.");
-                    return;
-                }
-
-                const result = await apiCall(`/events/${eventId}/register`, "POST", payload);
-
-                if (result?.success) {
-                    showMessage(result.message || "Registered successfully!");
-                    eventCard.dataset.registered = "true";
-                } else {
-                    showMessage(result?.message || "Registration failed.");
-                }
-            });
-
-        function showPreRegisterFormInsideModal(eventId) {
-            const modal = document.getElementById("eventModal");
-            const modalContent = document.querySelector("#eventModal .modal-content");
-
-            const modalTitle = document.getElementById("modalTitle");
-            const modalDate = document.getElementById("modalDate");
-            const modalDesc = document.getElementById("modalContent");
-            const registerBtn = document.getElementById("registerBtn");
-
-            [modalTitle, modalDate, modalDesc, registerBtn].forEach(el => {
-                if (el) el.style.display = "none";
-            });
-
-            const formContainer = document.createElement("div");
-            formContainer.classList.add("pre-register-container");
-
-            formContainer.innerHTML = `
-                <h2>Pre-Register for Event</h2>
-                <p class="subtitle">This event is open for public participants. Please fill out your information below:</p>
-
-                <div class="single-select">
-                    <label>Participant Type*</label>
-                    <select id="participantType" required>
-                        <option value="" disabled selected>Select Type</option>
-                        <option value="Guest">Guest</option>
-                        <option value="BulSUan">BulSUan</option>
-                    </select>
-                </div>
-
-                <div class="form-grid">
-                    <div class="left-col">
-                        <label>First Name*</label>
-                        <input type="text" id="firstName" required>
-
-                        <label>Last Name*</label>
-                        <input type="text" id="lastName" required>
-
-                        <label>Email*</label>
-                        <input type="email" id="email" required>
-
-                        <label>Gender*</label>
-                        <select id="gender" required>
-                            <option value="" disabled selected>Select Gender</option>
-                            <option>Male</option>
-                            <option>Female</option>
-                            <option>Other</option>
-                        </select>
-                    </div>
-
-                    <div class="right-col">
-                        <label>Middle Name</label>
-                        <input type="text" id="middleName">
-
-                        <label>Suffix</label>
-                        <select id="suffix">
-                            <option>None</option>
-                            <option>Jr.</option>
-                            <option>I</option>
-                            <option>II</option>
-                            <option>III</option>
-                        </select>
-
-                        <label>Phone Number</label>
-                        <input type="text" id="phone">
-
-                        <label>Facebook Profile Name</label>
-                        <input type="text" id="facebook">
-                    </div>
-                </div>
-
-                <div class="form-actions">
-                    <button id="submitPreRegister">Submit</button>
-                    <button id="cancelPreRegister">Cancel</button>
-                </div>
-            `;
-
-            const existingForm = document.querySelector(".pre-register-container");
-            if (existingForm) existingForm.remove();
-
-            modalContent.appendChild(formContainer);
-            modal.style.display = "flex";
-
-            document.getElementById("cancelPreRegister").addEventListener("click", () => {
-                formContainer.remove();
-                [modalTitle, modalDate, modalDesc, registerBtn].forEach(el => {
-                    if (el) el.style.display = "";
-                });
-            });
-
-            document.getElementById("submitPreRegister").addEventListener("click", async () => {
-                const data = {
-                    first_name: document.getElementById("firstName").value,
-                    last_name: document.getElementById("lastName").value,
-                    middle_name: document.getElementById("middleName").value,
-                    suffix: document.getElementById("suffix").value,
-                    gender: document.getElementById("gender").value,
-                    email: document.getElementById("email").value,
-                    phone: document.getElementById("phone").value,
-                    facebook: document.getElementById("facebook").value,
-                    user_type: "guest",
-                };
-
-                if (!data.first_name || !data.last_name || !data.email || !data.gender) {
-                    alert("Please fill in all required fields.");
-                    return;
-                }
-
-                const result = await apiCall(`/events/${eventId}/register`, "POST", data);
-                if (result && result.success) {
-                    showMessage(result.message || "Pre-registration successful!");
-                    formContainer.remove();
-                    window.location.reload();
-                } else {
-                    showMessage(result?.message || "Pre-registration failed.");
-                }
-            });
-        }
-
-        function showBulSUPreRegisterForm(eventId) {
-            const modal = document.getElementById("eventModal");
-            const modalContent = document.querySelector("#eventModal .modal-content");
-
-            const modalTitle = document.getElementById("modalTitle");
-            const modalDate = document.getElementById("modalDate");
-            const modalDesc = document.getElementById("modalContent");
-            const registerBtn = document.getElementById("registerBtn");
-
-            [modalTitle, modalDate, modalDesc, registerBtn].forEach(el => {
-                if (el) el.style.display = "none";
-            });
-
-            const formContainer = document.createElement("div");
-            formContainer.classList.add("pre-register-container");
-
-            formContainer.innerHTML = `
-                <h2>Pre-Register for BulSUans Only Event</h2>
-                <p class="subtitle">This event is restricted to BulSU participants. Please fill out your information below:</p>
-
-                <div class="form-grid">
-                    <div class="left-col">
-                        <label>First Name*</label>
-                        <input type="text" id="firstName" required>
-
-                        <label>Last Name*</label>
-                        <input type="text" id="lastName" required>
-
-                        <label>Email*</label>
-                        <input type="email" id="email" required>
-
-                        <label>Gender*</label>
-                        <select id="gender" required>
-                            <option value="" disabled selected>Select Gender</option>
-                            <option>Male</option>
-                            <option>Female</option>
-                            <option>Other</option>
-                        </select>
-                    </div>
-
-                    <div class="right-col">
-                        <label>Middle Name</label>
-                        <input type="text" id="middleName">
-
-                        <label>Suffix</label>
-                        <select id="suffix">
-                            <option>None</option>
-                            <option>Jr.</option>
-                            <option>I</option>
-                            <option>II</option>
-                            <option>III</option>
-                        </select>
-
-                        <label>Phone Number</label>
-                        <input type="text" id="phone">
-
-                        <label>Facebook Profile Name</label>
-                        <input type="text" id="facebook">
-                    </div>
-                </div>
-
-                <h3>BulSU Information</h3>
-                <div class="form-grid">
-                    <div class="left-col">
-                        <label>Student/Employee ID*</label>
-                        <input type="text" id="studentId" required>
-
-                        <label>Program*</label>
-                        <input type="text" id="program" required>
-                    </div>
-                    <div class="right-col">
-                        <label>College*</label>
-                        <input type="text" id="college" required>
-
-                        <label>Year Level*</label>
-                        <select id="yearLevel" required>
-                            <option value="" disabled selected>Select Year Level</option>
-                            <option>1st year</option>
-                            <option>2nd year</option>
-                            <option>3rd year</option>
-                            <option>4th year</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-grid">
-                    <label>Section</label>
-                    <input type="text" id="section">
-                </div>
-
-                <div class="form-actions">
-                    <button id="submitBulSUPreRegister">Submit</button>
-                    <button id="cancelBulSUPreRegister">Cancel</button>
-                </div>
-            `;
-
-            const existingForm = document.querySelector(".pre-register-container");
-            if (existingForm) existingForm.remove();
-
-            modalContent.appendChild(formContainer);
-            modal.style.display = "flex";
-
-            document.getElementById("cancelBulSUPreRegister").addEventListener("click", () => {
-                formContainer.remove();
-                [modalTitle, modalDate, modalDesc, registerBtn].forEach(el => {
-                    if (el) el.style.display = "";
-                });
-            });
-
-            document.getElementById("submitBulSUPreRegister").addEventListener("click", async () => {
-                const data = {
-                    first_name: document.getElementById("firstName").value,
-                    last_name: document.getElementById("lastName").value,
-                    middle_name: document.getElementById("middleName").value,
-                    suffix: document.getElementById("suffix").value,
-                    gender: document.getElementById("gender").value,
-                    email: document.getElementById("email").value,
-                    phone: document.getElementById("phone").value,
-                    facebook: document.getElementById("facebook").value,
-                    student_id: document.getElementById("studentId").value,
-                    program: document.getElementById("program").value,
-                    college: document.getElementById("college").value,
-                    year_level: document.getElementById("yearLevel").value,
-                    section: document.getElementById("section").value,
-                    user_type: "bulsuan",
-                };
-
-                if (!data.first_name || !data.last_name || !data.email || !data.gender || !data.student_id || !data.program || !data.college || !data.year_level) {
-                    alert("Please fill in all required fields.");
-                    return;
-                }
-
-                const result = await apiCall(`/events/${eventId}/register`, "POST", data);
-                if (result && result.success) {
-                    showMessage(result.message || "Pre-registration successful!");
-                    formContainer.remove();
-                    window.location.reload();
-                } else {
-                    showMessage(result?.message || "Pre-registration failed.");
-                }
-            });
-        }
-
-        async function handleMembersOnlyRegistration(eventId) {
-            const modal = document.getElementById("eventModal");
-            const modalContent = document.querySelector("#eventModal .modal-content");
-            const modalTitle = document.getElementById("modalTitle");
-            const modalDate = document.getElementById("modalDate");
-            const modalDesc = document.getElementById("modalContent");
-            let registerBtn = document.getElementById("registerBtn");
-
-            [modalTitle, modalDate, modalDesc].forEach(el => {
-                if (el) el.style.display = "";
-            });
-
-            registerBtn.style.display = "inline-block";
-            registerBtn.textContent = "Register Now";
-            registerBtn.dataset.eventId = eventId;
-
-            const newRegisterBtn = registerBtn.cloneNode(true);
-            registerBtn.parentNode.replaceChild(newRegisterBtn, registerBtn);
-            registerBtn = newRegisterBtn;
-
-            registerBtn.onclick = async () => {
-                const authStatus = await apiCall("/auth/check-login", "GET");
-                if (!authStatus?.success || !authStatus?.data?.logged_in) {
-                    showMessage('Please <a href="login.php" class="text-blue-500">log in</a> first to register.');
-                    return;
-                }
-
-                const result = await apiCall(`/events/${eventId}/register`, "POST", {}, `Register for Event #${eventId}`);
-                if (result?.success) {
-                    showMessage(result.message || "✅ Registered successfully!");
-                } else {
-                    showMessage(result?.message || "Registration failed.");
-                }
-            };
-
-            let cancelPreBtn = document.getElementById("cancelPreRegister");
-            if (!cancelPreBtn) {
-                cancelPreBtn = document.createElement("button");
-                cancelPreBtn.id = "cancelPreRegister";
-                cancelPreBtn.textContent = "Cancel Pre-Registration";
-                cancelPreBtn.className = "register-btn";
-                modalContent.appendChild(cancelPreBtn);
             }
 
-            cancelPreBtn.style.display = "inline-block";
-
-            cancelPreBtn.onclick = async () => {
-                const authStatus = await apiCall("/auth/check-login", "GET");
-                if (!authStatus?.success || !authStatus?.data?.logged_in) {
-                    showMessage('Please <a href="login.php" class="text-blue-500">log in</a> first.');
-                    return;
-                }
-
-                const userId = authStatus.data.user_id;
-
-                const result = await apiCall(`/events/${eventId}/cancel-pre-registration`, "POST", { user_id: userId });
-                if (result?.success) {
-                    showMessage(result.message || "✅ Registration canceled.");
-                } else {
-                    showMessage(result?.message || "Cancellation failed.");
-                }
-            };
-
-            modal.style.display = "flex";
-        }
-
-        function showMessage(msg) {
-            const eventModal = document.getElementById("eventModal");
-            eventModal.style.display = "none";
-
-            const messageModal = document.getElementById("messageModal");
-            const messageText = document.getElementById("messageText");
-            messageText.innerHTML = msg;
-            messageModal.style.display = "flex";
-
-            const closeBtn = document.getElementById("messageCloseBtn");
-            closeBtn.onclick = () => messageModal.style.display = "none";
-
-            messageModal.onclick = e => {
-                if (e.target === messageModal) messageModal.style.display = "none";
-            };
-        }
-
-        function checkEventStatus() {
-            const now = new Date();
-
-            document.querySelectorAll(".event-card[data-registered='true']").forEach(card => {
-                const eventEnd = new Date(`${card.dataset.date}T${card.dataset.time.split(' - ')[1]}`);
-                if (now > eventEnd) {
-                    const completedSection = document.querySelector("#completedSection .event-list");
-                    completedSection.appendChild(card);
-
-                    card.dataset.status = "completed";
-                }
-            });
-        }
-
-        setInterval(checkEventStatus, 30000);
-
-        document.querySelectorAll(".filter-btn").forEach(btn => {
-            btn.addEventListener("click", () => {
-                document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
-                btn.classList.add("active");
-
-                document.querySelectorAll(".event-section").forEach(section => {
-                    section.style.display = "none";
-                });
-
-                const targetSection = document.getElementById(btn.dataset.section);
-                if (targetSection) {
-                    targetSection.style.display = "block";
-                }
-            });
+            if (restriction === "public") {
+                showPreRegisterFormInsideModal(eventId, profileData);
+            } else if (restriction === "bulsuans") {
+                showBulSUPreRegisterForm(eventId, profileData);
+            } else if (restriction === "members") {
+                handleMembersOnlyRegistration(eventId, profileData);
+            } else {
+                showMessage(`<p class="text-white">🚫 This event is restricted to ${restriction} participants.</p>`);
+            }
         });
     }
 
+    // Public pre-register form (guest or logged-in pre-fill)
+// Public pre-register form (guest or logged-in pre-fill)
+async function showPreRegisterFormInsideModal(eventId, profileData = null) {
+    const modal = document.getElementById("eventModal");
+    const modalContent = modal.querySelector(".modal-content");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalDate = document.getElementById("modalDate");
+    const modalDesc = document.getElementById("modalContent");
+    const registerBtn = document.getElementById("registerBtn");
+
+    // Hide default text/buttons
+    [modalTitle, modalDate, modalDesc, registerBtn].forEach(el => { if (el) el.style.display = "none"; });
+
+    // Remove old form if present
+    const existingForm = modalContent.querySelector(".pre-register-container");
+    if (existingForm) existingForm.remove();
+
+    // Create form
+    const formContainer = document.createElement("div");
+    formContainer.classList.add("pre-register-container");
+    formContainer.innerHTML = `
+        <h2>Pre-Register for Event</h2>
+        <p class="subtitle">This event is open for public participants. Please fill out your information below:</p>
+        <div class="single-select">
+            <label>Participant Type*</label>
+            <select id="participantType" required>
+                <option value="" disabled selected>Select Type</option>
+                <option value="Guest">Guest</option>
+                <option value="BulSUan">BulSUan</option>
+            </select>
+        </div>
+        <div class="form-grid">
+            <div class="left-col">
+                <label>First Name*</label><input type="text" id="firstName" required>
+                <label>Last Name*</label><input type="text" id="lastName" required>
+                <label>Email*</label><input type="email" id="email" required>
+                <label>Gender*</label>
+                <select id="gender" required>
+                    <option value="" disabled selected>Select Gender</option>
+                    <option>Male</option><option>Female</option><option>Other</option>
+                </select>
+            </div>
+            <div class="right-col">
+                <label>Middle Name</label><input type="text" id="middleName">
+                <label>Suffix</label>
+                <select id="suffix"><option>None</option><option>Jr.</option><option>I</option><option>II</option><option>III</option></select>
+                <label>Phone Number</label><input type="text" id="phone">
+                <label>Facebook Profile Name</label><input type="text" id="facebook">
+            </div>
+        </div>
+        <div class="form-actions">
+            <button id="submitPreRegister" class="register-btn">Submit</button>
+            <button id="cancelPreRegister" class="register-btn cancel-btn">Cancel</button>
+        </div>
+    `;
+    modalContent.appendChild(formContainer);
+    modal.style.display = "flex";
+
+    // Prefill if profile data exists (logged-in BulSUan)
+    if (profileData) {
+        const participantSelect = document.getElementById("participantType");
+        participantSelect.value = "BulSUan";
+        participantSelect.disabled = true; // lock selection
+
+        document.getElementById("firstName").value = profileData.first_name || "";
+        document.getElementById("lastName").value = profileData.last_name || "";
+        document.getElementById("middleName").value = profileData.middle_name || "";
+        document.getElementById("suffix").value = profileData.suffix || "None";
+        document.getElementById("email").value = profileData.email || "";
+        document.getElementById("phone").value = profileData.phone || "";
+        document.getElementById("facebook").value = profileData.facebook || "";
+        document.getElementById("gender").value = profileData.gender || "";
+    }
+
+    // Restore original elements on cancel
+    document.getElementById("cancelPreRegister").addEventListener("click", () => {
+        formContainer.remove();
+        [modalTitle, modalDate, modalDesc, registerBtn].forEach(el => { if (el) el.style.display = ""; });
+    });
+
+    // Helper to check registration by email (uses backend endpoint)
+    async function checkRegistrationByEmail(eventIdLocal, email) {
+        try {
+            const res = await apiCall(`/events/${eventIdLocal}/check-registration-email?email=${encodeURIComponent(email)}`, "GET");
+            return res?.success && !!res.data?.registered;
+        } catch (err) {
+            console.error("Error checking registration by email:", err);
+            return false;
+        }
+    }
+
+    const emailInput = document.getElementById("email");
+    const submitBtn = document.getElementById("submitPreRegister");
+
+    // Update button state — only for Guests
+    async function updateRegistrationState() {
+        const email = (emailInput.value || "").trim();
+        const participantType = document.getElementById("participantType").value.trim();
+
+        if (!email) {
+            submitBtn.textContent = "Submit";
+            submitBtn.classList.remove("cancel-mode");
+            return;
+        }
+
+        // Skip check for BulSUan (logged in)
+        if (participantType === "BulSUan") return;
+
+        submitBtn.disabled = true;
+        const alreadyRegistered = await checkRegistrationByEmail(eventId, email);
+        submitBtn.disabled = false;
+
+        if (alreadyRegistered) {
+            submitBtn.textContent = "Cancel Pre-Registration";
+            submitBtn.classList.add("cancel-mode");
+        } else {
+            submitBtn.textContent = "Submit";
+            submitBtn.classList.remove("cancel-mode");
+        }
+    }
+
+    // Trigger when email loses focus (for guests)
+    emailInput.addEventListener("blur", updateRegistrationState);
+
+    // Submit handler — either cancel or register
+    submitBtn.addEventListener("click", async () => {
+        const email = (emailInput.value || "").trim();
+        const participantType = document.getElementById("participantType").value.trim();
+
+        if (!email) {
+            alert("Please enter your email to continue.");
+            emailInput.focus();
+            return;
+        }
+
+        // Skip registration check for BulSUan (since backend join causes false positives)
+        let already = false;
+        if (participantType === "Guest") {
+            already = await checkRegistrationByEmail(eventId, email);
+        }
+
+        if (already && participantType === "Guest") {
+            // Guest cancel modal
+            showModal(`
+                <p class="text-white mb-4">You are already registered for this event. Do you want to cancel your registration?</p>
+                <div class="flex gap-4 justify-center">
+                    <button id="confirmCancelBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg">Cancel Pre-Registration</button>
+                    <button id="closeModalBtn" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg">Close</button>
+                </div>
+            `);
+
+            document.getElementById("confirmCancelBtn").addEventListener("click", async () => {
+                const res = await apiCall(`/events/${eventId}/cancel-pre-registration`, "POST", { email });
+                if (res?.success) {
+                    closeModal();
+                    formContainer.remove();
+                    showMessage('<p class="text-white">✅ Your pre-registration has been cancelled.</p>');
+                    setTimeout(() => window.location.reload(), 800);
+                } else {
+                    closeModal();
+                    showMessage(`<p class="text-white">❌ ${res?.message || "Failed to cancel."}</p>`);
+                }
+            });
+
+            document.getElementById("closeModalBtn").addEventListener("click", closeModal);
+            return;
+        }
+
+        // Proceed to register
+        const formData = {
+            user_type: participantType,
+            first_name: document.getElementById("firstName").value.trim(),
+            last_name: document.getElementById("lastName").value.trim(),
+            middle_name: document.getElementById("middleName").value.trim(),
+            suffix: document.getElementById("suffix").value,
+            email,
+            phone: document.getElementById("phone").value.trim(),
+            facebook: document.getElementById("facebook").value.trim(),
+            gender: document.getElementById("gender").value
+        };
+
+        const result = await apiCall(`/events/${eventId}/register`, "POST", formData);
+
+        if (result?.success) {
+            showMessage(`<p class="text-white">✅ ${result.message || "Pre-registration successful!"}</p>`);
+            formContainer.remove();
+            setTimeout(() => window.location.reload(), 800);
+        } else {
+            showMessage(`<p class="text-white">❌ ${result?.message || "Pre-registration failed."}</p>`);
+        }
+    });
+}
+
+    // BulSU pre-register form (full implementation)
+    async function showBulSUPreRegisterForm(eventId, profileData = null) {
+        const modal = document.getElementById("eventModal");
+        const modalContent = modal.querySelector(".modal-content");
+        const modalTitle = document.getElementById("modalTitle");
+        const modalDate = document.getElementById("modalDate");
+        const modalDesc = document.getElementById("modalContent");
+        const registerBtn = document.getElementById("registerBtn");
+
+        // Hide default modal content
+        [modalTitle, modalDate, modalDesc, registerBtn].forEach(el => { if (el) el.style.display = "none"; });
+
+        // Remove old form if exists
+        const existingForm = modalContent.querySelector(".pre-register-container");
+        if (existingForm) existingForm.remove();
+
+        // Create form
+        const formContainer = document.createElement("div");
+        formContainer.classList.add("pre-register-container");
+
+        formContainer.innerHTML = `
+            <h2>Pre-Register for BulSUans Only Event</h2>
+            <p class="subtitle">This event is restricted to BulSU participants. Please fill out your information below:</p>
+
+            <div class="form-grid">
+                <div class="left-col">
+                    <label>First Name*</label><input type="text" id="firstName" required>
+                    <label>Last Name*</label><input type="text" id="lastName" required>
+                    <label>Email*</label><input type="email" id="email" required>
+                    <label>Gender*</label>
+                    <select id="gender" required>
+                        <option value="" disabled selected>Select Gender</option>
+                        <option>Male</option>
+                        <option>Female</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+                <div class="right-col">
+                    <label>Middle Name</label><input type="text" id="middleName">
+                    <label>Suffix</label>
+                    <select id="suffix">
+                        <option>None</option>
+                        <option>Jr.</option>
+                        <option>I</option>
+                        <option>II</option>
+                        <option>III</option>
+                    </select>
+                    <label>Phone Number</label><input type="text" id="phone">
+                    <label>Facebook Profile Name</label><input type="text" id="facebook">
+                </div>
+            </div>
+
+            <h3>BulSU Information</h3>
+            <div class="form-grid">
+                <div class="left-col">
+                    <label>Student/Employee ID*</label><input type="text" id="studentId" required>
+                    <label>Program*</label><input type="text" id="program" required>
+                </div>
+                <div class="right-col">
+                    <label>College*</label><input type="text" id="college" required>
+                    <label>Year Level*</label>
+                    <select id="yearLevel" required>
+                        <option value="" disabled selected>Select Year Level</option>
+                        <option>1st year</option>
+                        <option>2nd year</option>
+                        <option>3rd year</option>
+                        <option>4th year</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <label>Section</label><input type="text" id="section">
+            </div>
+
+            <div class="form-actions">
+                <button id="submitBulSUPreRegister" class="register-btn">Submit</button>
+                <button id="cancelBulSUPreRegister" class="register-btn cancel-btn">Cancel</button>
+            </div>
+        `;
+
+        modalContent.appendChild(formContainer);
+        modal.style.display = "flex";
+
+        // Prefill from profileData if available
+        if (profileData) {
+            document.getElementById("firstName").value = profileData.first_name || "";
+            document.getElementById("lastName").value = profileData.last_name || "";
+            document.getElementById("middleName").value = profileData.middle_name || "";
+            document.getElementById("suffix").value = profileData.suffix || "None";
+            document.getElementById("email").value = profileData.email || "";
+            document.getElementById("phone").value = profileData.phone || "";
+            document.getElementById("facebook").value = profileData.facebook || "";
+            document.getElementById("gender").value = profileData.gender || "";
+            document.getElementById("studentId").value = profileData.student_id || profileData.student_no || profileData.msc_id || "";
+            document.getElementById("program").value = profileData.program || "";
+            document.getElementById("college").value = profileData.college || "";
+            document.getElementById("yearLevel").value = profileData.year_level || "";
+            document.getElementById("section").value = profileData.section || "";
+        }
+
+        // Cancel button
+        document.getElementById("cancelBulSUPreRegister").addEventListener("click", () => {
+            formContainer.remove();
+            [modalTitle, modalDate, modalDesc, registerBtn].forEach(el => { if (el) el.style.display = ""; });
+        });
+
+        // Helper: check registration by email
+        async function checkRegistrationByEmail(eventIdLocal, email) {
+            try {
+                const res = await apiCall(`/events/${eventIdLocal}/check-registration-email?email=${encodeURIComponent(email)}`, "GET");
+                return res?.success && !!res.data?.registered;
+            } catch (err) {
+                console.error("Error checking registration by email:", err);
+                return false;
+            }
+        }
+
+        const emailInput = document.getElementById("email");
+        const submitBtn = document.getElementById("submitBulSUPreRegister");
+
+        async function updateRegistrationState() {
+            const email = (emailInput.value || "").trim();
+            if (!email) return;
+            submitBtn.disabled = true;
+            const alreadyRegistered = await checkRegistrationByEmail(eventId, email);
+            submitBtn.disabled = false;
+            submitBtn.textContent = alreadyRegistered ? "Cancel Pre-Registration" : "Submit";
+            submitBtn.classList.toggle("cancel-mode", alreadyRegistered);
+        }
+
+        emailInput.addEventListener("blur", updateRegistrationState);
+
+        // Submit handler
+        submitBtn.addEventListener("click", async () => {
+            const data = {
+                first_name: document.getElementById("firstName").value.trim(),
+                last_name: document.getElementById("lastName").value.trim(),
+                middle_name: document.getElementById("middleName").value.trim(),
+                suffix: document.getElementById("suffix").value,
+                gender: document.getElementById("gender").value,
+                email: document.getElementById("email").value.trim(),
+                phone: document.getElementById("phone").value.trim(),
+                facebook: document.getElementById("facebook").value.trim(),
+                student_id: document.getElementById("studentId").value.trim(),
+                program: document.getElementById("program").value.trim(),
+                college: document.getElementById("college").value.trim(),
+                year_level: document.getElementById("yearLevel").value.trim(),
+                section: document.getElementById("section").value.trim(),
+                user_type: "bulsuan",
+            };
+
+            // Validate required fields
+            if (!data.first_name || !data.last_name || !data.email || !data.gender ||
+                !data.student_id || !data.program || !data.college || !data.year_level) {
+                alert("Please fill in all required fields.");
+                return;
+            }
+
+            // Check if already registered
+            const already = await checkRegistrationByEmail(eventId, data.email);
+            if (already) {
+                showModal(`
+                    <p class="text-white mb-4">You are already registered. Cancel your registration?</p>
+                    <div class="flex gap-4 justify-center">
+                        <button id="confirmCancelBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg">Cancel Pre-Registration</button>
+                        <button id="closeModalBtn" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg">Close</button>
+                    </div>
+                `);
+                document.getElementById("confirmCancelBtn").addEventListener("click", async () => {
+                    const res = await apiCall(`/events/${eventId}/cancel-pre-registration`, "POST", { email: data.email });
+                    if (res?.success) {
+                        closeModal();
+                        formContainer.remove();
+                        showMessage('<p class="text-white">✅ Pre-registration cancelled.</p>');
+                        setTimeout(() => window.location.reload(), 800);
+                    } else {
+                        closeModal();
+                        showMessage(`<p class="text-white">❌ ${res?.message || "Failed to cancel."}</p>`);
+                    }
+                });
+                document.getElementById("closeModalBtn").addEventListener("click", closeModal);
+                return;
+            }
+
+            // Register
+            const result = await apiCall(`/events/${eventId}/register`, "POST", data);
+            if (result?.success) {
+                showMessage(`<p class="text-white">✅ ${result.message || "Pre-registration successful!"}</p>`);
+                formContainer.remove();
+                setTimeout(() => window.location.reload(), 800);
+            } else {
+                showMessage(`<p class="text-white">❌ ${result?.message || "Pre-registration failed."}</p>`);
+            }
+        });
+    }
+
+
+    // Members only registration
+async function handleMembersOnlyRegistration(eventId, profileData = null) {
+    const modal = document.getElementById("eventModal");
+    const modalContent = modal.querySelector(".modal-content");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalDate = document.getElementById("modalDate");
+    const modalDesc = document.getElementById("modalContent");
+    const registerBtn = document.getElementById("registerBtn");
+
+    // Hide default modal content
+    [modalTitle, modalDate, modalDesc, registerBtn].forEach(el => {
+        if (el) el.style.display = "none";
+    });
+
+    // Remove any old forms
+    const existingForm = modalContent.querySelector(".pre-register-container");
+    if (existingForm) existingForm.remove();
+
+    // Create a simple container
+    const formContainer = document.createElement("div");
+    formContainer.classList.add("pre-register-container");
+    formContainer.innerHTML = `
+        <h2>Member Registration Check</h2>
+        <p class="subtitle">Checking your registration status...</p>
+        <div id="memberStatusActions" class="form-actions" style="display:none;">
+            <button id="submitMemberRegister" class="register-btn">Register Now</button>
+            <button id="cancelMemberRegister" class="register-btn cancel-btn">Cancel Registration</button>
+        </div>
+    `;
+    modalContent.appendChild(formContainer);
+    modal.style.display = "flex";
+
+    const statusText = formContainer.querySelector(".subtitle");
+    const actions = document.getElementById("memberStatusActions");
+    const submitBtn = document.getElementById("submitMemberRegister");
+    const cancelBtn = document.getElementById("cancelMemberRegister");
+
+    // --- Helper: check registration ---
+    async function checkRegistrationByEmail(eventIdLocal, email) {
+        try {
+            const res = await apiCall(`/events/${eventIdLocal}/check-registration-email?email=${encodeURIComponent(email)}`, "GET");
+            return res?.success && !!res.data?.registered;
+        } catch (err) {
+            console.error("Error checking registration by email:", err);
+            return false;
+        }
+    }
+
+    // --- Helper: refresh UI based on registration state ---
+    async function updateRegistrationState() {
+        const email = (profileData?.email || "").trim();
+        if (!email) {
+            statusText.textContent = "❌ Missing email address in your profile.";
+            return;
+        }
+
+        statusText.textContent = "Checking registration...";
+        actions.style.display = "none";
+
+        const alreadyRegistered = await checkRegistrationByEmail(eventId, email);
+
+        if (alreadyRegistered) {
+            statusText.textContent = "✅ You are already registered for this event.";
+            submitBtn.style.display = "none";
+            cancelBtn.style.display = "inline-block";
+        } else {
+            statusText.textContent = "You are not registered for this event.";
+            submitBtn.style.display = "inline-block";
+            cancelBtn.style.display = "none";
+        }
+
+        actions.style.display = "flex";
+    }
+
+    // --- Click: register ---
+    submitBtn.addEventListener("click", async () => {
+        console.log("Profile data being sent:", profileData);
+        if (!profileData) {
+            showMessage(`<p class="text-white">❌ Missing profile data. Please log in again.</p>`);
+            return;
+        }
+
+        const data = {
+            student_id: profileData.student_id || profileData.student_no || profileData.msc_id || "",
+            first_name: profileData.first_name || "",
+            last_name: profileData.last_name || "",
+            email: profileData.email || "",
+            program: profileData.program || "",
+            college: profileData.college || "",
+            year_level: profileData.year_level || "",
+            section: profileData.section || "",
+            gender: profileData.gender || "",
+            phone: profileData.phone || "",
+            facebook: profileData.facebook_link || "",
+            user_type: "member"
+        };
+
+        const result = await apiCall(`/events/${eventId}/register`, "POST", data);
+        if (result?.success) {
+            showMessage(`<p class="text-white">✅ ${result.message || "Successfully pre-registered!"}</p>`);
+            setTimeout(() => window.location.reload(), 800);
+        } else {
+            showMessage(`<p class="text-white">❌ ${result?.message || "Pre-registration failed."}</p>`);
+        }
+    });
+
+    // --- Click: cancel registration ---
+    cancelBtn.addEventListener("click", async () => {
+        const email = profileData?.email;
+        if (!email) return;
+
+        const res = await apiCall(`/events/${eventId}/cancel-pre-registration`, "POST", { email });
+        if (res?.success) {
+            showMessage(`<p class="text-white">✅ Registration cancelled successfully.</p>`);
+            setTimeout(() => window.location.reload(), 800);
+        } else {
+            showMessage(`<p class="text-white">❌ ${res?.message || "Failed to cancel registration."}</p>`);
+        }
+    });
+
+    // --- Initialize ---
+    await updateRegistrationState();
+}
+
+
+
+    function showMessage(msg) {
+        const eventModal = document.getElementById("eventModal");
+        const messageModal = document.getElementById("messageModal");
+        const inner = document.getElementById("messageInner");
+
+        // Hide event modal
+        eventModal.style.display = "none";
+
+        // Show message in message modal
+        inner.innerHTML = msg;
+        messageModal.style.display = "flex";
+
+        // Handle close button
+        const closeBtn = document.getElementById("messageCloseBtn");
+        closeBtn.onclick = () => {
+            messageModal.style.display = "none";
+            inner.innerHTML = "";
+            // reload if success sign present
+            if (msg.includes("✅")) {
+                window.location.reload();
+            }
+        };
+
+        // Auto-close after 3 seconds on success
+        if (msg.includes("✅")) {
+            setTimeout(() => {
+                messageModal.style.display = "none";
+                inner.innerHTML = "";
+                window.location.reload();
+            }, 3000);
+        }
+    }
+
+    function checkEventStatus() {
+        const now = new Date();
+
+        document.querySelectorAll(".event-card[data-registered='true']").forEach(card => {
+            const eventEnd = new Date(`${card.dataset.date}T${card.dataset.time.split(' - ')[1]}`);
+            if (now > eventEnd) {
+                const completedSection = document.querySelector("#completedSection .event-list");
+                completedSection.appendChild(card);
+
+                card.dataset.status = "completed";
+            }
+        });
+    }
+
+    setInterval(checkEventStatus, 30000);
+
+    document.querySelectorAll(".filter-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+
+            document.querySelectorAll(".event-section").forEach(section => {
+                section.style.display = "none";
+            });
+
+            const targetSection = document.getElementById(btn.dataset.section);
+            if (targetSection) {
+                targetSection.style.display = "block";
+            }
+        });
+    });
+
+    // initialize listeners after initial load
     document.addEventListener("DOMContentLoaded", () => {
-        attachCardListeners();
+        // attachCardListeners will be called after renderEvents; but we call again to be safe
+        setTimeout(()=> attachCardListeners(), 250);
     });
 </script>
-<?php include '_footer.php'; ?>
+
 </div>
+<?php include '_footer.php'; ?>

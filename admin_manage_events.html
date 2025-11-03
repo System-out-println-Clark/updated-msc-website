@@ -1350,8 +1350,8 @@
                             </div>
 
                             <div class="form-group">
-                                <label for="description">Description / Details</label>
-                                <textarea id="description" name="description" class="form-control" rows="6"
+                                <label for="edit_description">Description / Details</label>
+                                <textarea id="edit_description" name="description" class="form-control" rows="6"
                                     placeholder="Enter event details, objectives, program flow, speakers, etc."></textarea>
                             </div>
                             <div class="modal-footer">
@@ -1893,19 +1893,24 @@
             const evt = response.data;
 
             document.getElementById("event_name").value = evt.event_name;
-            document.getElementById("event_time_start").value = evt.event_date && evt.event_time_start
-                ? `${evt.event_date}T${evt.event_time_start}`
-                : "";
+            document.getElementById("event_time_start").value =
+                evt.event_date && evt.event_time_start
+                    ? `${evt.event_date}T${evt.event_time_start}`
+                    : "";
             document.getElementById("event_time_end").value = evt.event_time_end;
-            document.getElementById("edit_capacity").value = evt.capacity || "";
+
+            // ✅ Capacity logic fix
+            const capInput = document.getElementById("edit_capacity");
+            capInput.value = evt.capacity === Number.MAX_SAFE_INTEGER ? "" : evt.capacity;
+            capInput.dataset.original = evt.capacity; // store original capacity
+
             document.getElementById("event_status").value = evt.event_status;
             document.getElementById("event_type").value = evt.event_type;
             document.getElementById("event_restriction").value = evt.event_restriction;
-            //document.getElementById("registration_required").checked = evt.registration_required === 1;
             document.getElementById("edit_registration_required").checked = evt.registration_required === 1;
-            //console.log(evt.location);
             document.getElementById("edit_location").value = evt.location || "";
-            document.getElementById("description").value = evt.description || "";
+            document.getElementById("edit_description").value = evt.description || "";
+
             document.getElementById("editEventForm").dataset.eventId = eventId;
             editModal.style.display = "flex";
         }
@@ -1975,16 +1980,18 @@
                 event_restriction: document.getElementById("event_restriction").value,
                 event_restriction: document.getElementById("event_restriction").value,
                 registration_required: document.getElementById("edit_registration_required").checked ? 1 : 0,
-                description: document.getElementById("description").value,
+                description: document.getElementById("edit_description").value,
                 capacity: (() => {
-                    const el = document.getElementById("capacity");
-                    const v = el ? el.value.trim() : "";
+                    const el = document.getElementById("edit_capacity");
+                    if (!el) return Number.MAX_SAFE_INTEGER; // fallback safeguard
+
+                    const v = el.value.trim();
                     if (v === "" || v == null) {
-                        // empty input => treat as "unlimited" => use largest safe integer
+                        // if you really want "empty = unlimited"
                         return Number.MAX_SAFE_INTEGER;
                     }
+
                     const n = parseInt(v, 10);
-                    // if input is a valid number (including 0), return it; otherwise treat as unlimited
                     return isNaN(n) ? Number.MAX_SAFE_INTEGER : n;
                 })()
             };

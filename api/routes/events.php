@@ -68,6 +68,10 @@ switch ($method) {
             $eventController->getEventParticipants($endpoint);
         } else if (is_numeric($endpoint) && isset($id) && $id === 'eventDashboard') {
             $eventController->getEventById($endpoint);
+        } elseif ($endpoint && is_numeric($endpoint) && $id === 'check-registration' && isset($_GET['user_id'])) {
+        $eventController->isUserRegistered($endpoint, $_GET['user_id']);
+        } elseif ($endpoint && is_numeric($endpoint) && $id === 'check-registration-email' && isset($_GET['email'])) {
+        $eventController->checkRegistrationByEmail($endpoint, $_GET['email']);
         } elseif ($endpoint && is_numeric($endpoint)) {
             $eventController->getById($endpoint);
         } elseif ($endpoint === 'count') {
@@ -86,8 +90,6 @@ switch ($method) {
             $eventController->getAttendedEventsByStudent($id);
         } elseif ($endpoint === '' || $endpoint === 'all') {
             $eventController->getAll();
-        }elseif ($endpoint && is_numeric($endpoint) && $id === 'check-registration' && isset($_GET['user_id'])) {
-        $eventController->isUserRegistered($endpoint, $_GET['user_id']);
         } else {
             http_response_code(404);
             echo json_encode(['success' => false, 'message' => 'Event endpoint not found: ' . $endpoint]);

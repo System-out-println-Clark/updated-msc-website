@@ -91,6 +91,7 @@ CREATE TABLE IF NOT EXISTS settings (
 CREATE TABLE IF NOT EXISTS event_registrations (
     id INT AUTO_INCREMENT PRIMARY KEY,
     event_id INT NOT NULL,
+    is_registered TINYINT(1) DEFAULT 1,
     student_id INT NULL,
     first_name VARCHAR(100),
     last_name VARCHAR(100),

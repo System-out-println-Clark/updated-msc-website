@@ -438,30 +438,52 @@ class Event
     /**
      * Register a MEMBER (MSC logged-in student)
      */
-    public function registerMember($eventId, $studentId)
+    public function registerMember($eventId, $data)
     {
         try {
-            // Check for duplicate registration
+            session_start();
+            $email = $_SESSION['email'] ?? ($data['email'] ?? null);
+
+            if (!$email) {
+                throw new Exception("You must be logged in to register for this event.");
+            }
+
+            // ✅ Prevent duplicate registration (by email only)
             $check = $this->db->prepare("
                 SELECT id FROM event_registrations
-                WHERE event_id = :event_id AND student_id = :student_id
+                WHERE event_id = :event_id AND email = :email
             ");
-            $check->execute(['event_id' => $eventId, 'student_id' => $studentId]);
+            $check->execute(['event_id' => $eventId, 'email' => $email]);
+
             if ($check->fetch()) {
                 throw new Exception("You are already registered for this event.");
             }
 
+            // ✅ Insert registration (email-based)
             $stmt = $this->db->prepare("
-                INSERT INTO event_registrations (event_id, student_id, participant_type)
-                VALUES (:event_id, :student_id, 'member')
+                INSERT INTO event_registrations (
+                    event_id, participant_type, first_name, last_name, email, program, college, year_level, section
+                ) VALUES (
+                    :event_id, 'member', :first_name, :last_name, :email, :program, :college, :year_level, :section
+                )
             ");
-            $stmt->execute(['event_id' => $eventId, 'student_id' => $studentId]);
 
-            // Optional: increment attendants count
+            $stmt->execute([
+                'event_id' => $eventId,
+                'first_name' => $data['first_name'] ?? '',
+                'last_name' => $data['last_name'] ?? '',
+                'email' => $email,
+                'program' => $data['program'] ?? null,
+                'college' => $data['college'] ?? null,
+                'year_level' => $data['year_level'] ?? null,
+                'section' => $data['section'] ?? null
+            ]);
+
+            // ✅ Increment attendants
             $this->db->prepare("UPDATE events SET attendants = attendants + 1 WHERE event_id = :event_id")
-                    ->execute(['event_id' => $eventId]);
+                ->execute(['event_id' => $eventId]);
 
-            return ["success" => true, "message" => "Successfully registered as a member."];
+            return ["success" => true, "message" => "Member registration successful."];
         } catch (Exception $e) {
             throw new Exception("Member registration failed: " . $e->getMessage());
         }
@@ -475,6 +497,10 @@ class Event
     {
         $sql = "DELETE FROM event_registrations WHERE event_id = ? AND student_id = ?";
         $stmt = $this->db->prepare($sql);
+
+        $this->db->prepare("UPDATE events SET attendants = attendants - 1 WHERE event_id = :event_id")
+        ->execute(['event_id' => $eventId]);
+
         return $stmt->execute([$eventId, $userId]);
     }
 
@@ -492,6 +518,42 @@ class Event
         return $row['count'] > 0; // returns true/false
     }
 
+    /**
+     * Check if a user is registered for an event by email (for guests/public users)
+     */
+    public function checkRegistrationCountByEmail($eventId, $email) {
+        $query = "SELECT COUNT(*) AS registration_count
+                FROM event_registrations
+                INNER JOIN students 
+                    ON students.email = event_registrations.email
+                WHERE event_registrations.event_id = :event_id
+                AND students.email = :email";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([
+            'event_id' => $eventId,
+            'email' => $email
+        ]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $result ? (int)$result['registration_count'] : 0;
+    }
+
+
+    /**
+     * Cancel a Pre-Registration by email (for guest cancellations)
+     */
+    public function cancelRegistrationByEmail($eventId, $email)
+    {
+        $sql = "DELETE FROM event_registrations WHERE event_id = :event_id AND email = :email";
+        $stmt = $this->db->prepare($sql);
+
+        $this->db->prepare("UPDATE events SET attendants = attendants - 1 WHERE event_id = :event_id")
+        ->execute(['event_id' => $eventId]);
+
+        return $stmt->execute(['event_id' => $eventId, 'email' => $email]);
+    }
+
 
     /**
      * Register a BULSUAN (non-member but BulSU student)
@@ -500,7 +562,7 @@ class Event
     {
         try {
             // Required fields check
-            $required = ['first_name', 'last_name', 'email', 'program', 'college', 'year_level'];
+            $required = ['first_name', 'last_name', 'email', 'program', 'college', 'year_level', 'student_id'];
             foreach ($required as $field) {
                 if (empty($data[$field])) {
                     throw new Exception("Missing required field: $field");
@@ -509,9 +571,9 @@ class Event
 
             $stmt = $this->db->prepare("
                 INSERT INTO event_registrations (
-                    event_id, participant_type, first_name, last_name, email, program, college, year_level, section
+                    event_id, participant_type, first_name, last_name, email, program, college, year_level, section, student_id
                 ) VALUES (
-                    :event_id, 'bulsuan', :first_name, :last_name, :email, :program, :college, :year_level, :section
+                    :event_id, 'bulsuan', :first_name, :last_name, :email, :program, :college, :year_level, :section, :student_id
                 )
             ");
 
@@ -523,7 +585,8 @@ class Event
                 'program' => $data['program'],
                 'college' => $data['college'],
                 'year_level' => $data['year_level'],
-                'section' => $data['section'] ?? null
+                'section' => $data['section'] ?? null,
+                'student_id' => $data['student_id']
             ]);
 
             $this->db->prepare("UPDATE events SET attendants = attendants + 1 WHERE event_id = :event_id")

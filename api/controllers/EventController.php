@@ -606,7 +606,7 @@ class EventController
     public function register($eventId)
     {
         try {
-            $input = json_decode(file_get_contents('php://input'), true);
+            $input = json_decode(file_get_contents('php://input'), true) ?? [];
             $event = $this->eventModel->findById($eventId);
 
             if (!$event) {
@@ -617,29 +617,51 @@ class EventController
 
             switch ($restriction) {
                 case 'members':
+                    // ✅ Members-only registration (auto, no student_id required)
                     session_start();
                     $userId = $_SESSION['user_id'] ?? null;
-                    if (!$userId) return Response::unauthorized("Login required to register as a member.");
-                    $result = $this->eventModel->registerMember($eventId, $userId);
+
+                    if (!$userId) {
+                        return Response::unauthorized("Login required to register for this event.");
+                    }
+
+                    // Auto-fill user_id and participant_type
+                    $input['user_id'] = $userId;
+                    $input['participant_type'] = 'member';
+                    $input['user_type'] = 'member';
+
+                    // Optional: ensure email exists
+                    if (empty($input['email'])) {
+                        // You may fetch from DB using $userId if needed
+                        $user = $this->eventModel->findById($userId);
+                        if ($user && isset($user['email'])) {
+                            $input['email'] = $user['email'];
+                        }
+                    }
+
+                    $result = $this->eventModel->registerMember($eventId, $input);
                     break;
 
                 case 'bulsuans':
+                    // ✅ Keep existing logic for BulSUans
                     $result = $this->eventModel->registerBulSUan($eventId, $input);
                     break;
 
                 case 'public':
+                    // ✅ Keep existing logic for public registrations
                     $result = $this->eventModel->registerPublic($eventId, $input);
                     break;
 
                 default:
-                    return Response::error("Invalid event restriction type.");
+                    return Response::error("Invalid or unsupported event restriction type: {$restriction}");
             }
 
-            return Response::success($result);
+            return Response::success($result, "Registration successful");
         } catch (Exception $e) {
             return Response::error($e->getMessage());
         }
     }
+
 
     /**
      * Check if Member is registered for an event
@@ -661,16 +683,60 @@ class EventController
     }
 }
 
+    /**
+     * Check if a user (by email) is already registered for an event
+     */
+    public function checkRegistrationByEmail($eventId, $email)
+    {
+        $count = $this->eventModel->checkRegistrationCountByEmail($eventId, $email);
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Check completed successfully',
+            'data' => [
+                'event_id' => $eventId,
+                'email' => $email,
+                'registered' => $count > 0,
+                'registration_count' => $count
+            ]
+        ]);
+    }
 
     /**
-     * Cancel pre-registration for an event (Member only)
+     * Cancel pre-registration for an event
+     * Supports:
+     *  - logged-in users via session (student_id)
+     *  - passing { user_id } in POST body
+     *  - passing { email } in POST body (guest cancellation)
      */
     public function cancelRegistration($eventId)
     {
         try {
+            // read JSON body
+            $input = json_decode(file_get_contents('php://input'), true);
+
+            // If user_id provided in body, use it
+            if (!empty($input['user_id'])) {
+                $userId = $input['user_id'];
+                $result = $this->eventModel->cancelRegistration($eventId, $userId);
+                if ($result) return Response::success(null, "Pre-registration cancelled successfully.");
+                return Response::error("You are not registered for this event.");
+            }
+
+            // If email provided in body, cancel by email (guest)
+            if (!empty($input['email'])) {
+                $email = $input['email'];
+                $result = $this->eventModel->cancelRegistrationByEmail($eventId, $email);
+                if ($result) {
+                    return Response::success(null, "Pre-registration cancelled successfully.");
+                } else {
+                    return Response::error("No registration found for that email.");
+                }
+            }
+
+            // Otherwise fallback to session user
             session_start();
             $userId = $_SESSION['user_id'] ?? null;
-
             if (!$userId) {
                 return Response::unauthorized("Login required to cancel registration.");
             }
@@ -686,6 +752,7 @@ class EventController
             return Response::serverError($e->getMessage());
         }
     }
+
 
     /**
      * Get event registrations (Officer only)

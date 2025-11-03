@@ -238,15 +238,84 @@
     });
 
     /**
-     * Load and Autofill Profile Data
+     * Handle Profile Picture Preview + Upload
+     */
+    const profileInput = document.getElementById("profile");
+    const previewContainer = document.getElementById("profile-picture-preview");
+
+    // ✅ 1. Preview image instantly
+    profileInput.addEventListener("change", async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Validate file type and size
+        const allowedTypes = ["image/jpeg", "image/png"];
+        if (!allowedTypes.includes(file.type)) {
+            alert("❌ Please upload a JPG or PNG image only.");
+            e.target.value = "";
+            return;
+        }
+        if (file.size > 2 * 1024 * 1024) { // 2MB
+            alert("❌ File too large! Max size is 2MB.");
+            e.target.value = "";
+            return;
+        }
+
+        // Instant preview
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            previewContainer.innerHTML = `<img src="${event.target.result}" alt="Profile Preview" class="w-full h-full object-cover" />`;
+        };
+        reader.readAsDataURL(file);
+
+        // ✅ 2. Upload to server
+        if (!studentId) {
+            alert("⚠️ Please wait until your profile loads before uploading.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("profile", file);
+
+        try {
+            const response = await fetch(`${API_BASE}/students/upload-profile/${studentId}`, {
+                method: "POST",
+                body: formData,
+                credentials: "include",
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                alert("✅ Profile picture updated successfully!");
+                // Update preview with new image path from server
+                if (result.file_url) {
+                    previewContainer.innerHTML = `<img src="${result.file_url}" alt="Profile Picture" class="w-full h-full object-cover" />`;
+                }
+            } else {
+                alert("⚠️ Upload failed: " + (result.message || "Unknown error"));
+            }
+        } catch (err) {
+            console.error("❌ Upload error:", err);
+            alert("❌ Failed to upload image. Please try again.");
+        }
+    });
+
+    /**
+     * 🖼️ Load existing profile picture when profile data loads
      */
     async function loadProfileData(id) {
         console.log("📥 Fetching profile data for ID:", id);
         const profileRes = await apiCall(`/students/${id}`, "GET");
 
         if (profileRes.success && profileRes.data) {
-            console.log("📄 Profile data received:", profileRes.data);
             const d = profileRes.data;
+
+            // 🖼️ Show existing profile picture (if any)
+            if (d.profile_image_path) {
+                previewContainer.innerHTML = `<img src="${API_BASE.replace('/api', '')}/${d.profile_image_path}" alt="Profile Picture" class="w-full h-full object-cover" />`;
+            } else {
+                previewContainer.innerHTML = `<div class="w-full h-full bg-[#27272a] flex items-center justify-center text-gray-400 text-sm">No Image</div>`;
+            }
 
             // ✅ Match database column names
             document.getElementById("mscCode").placeholder = d.msc_id || "";
