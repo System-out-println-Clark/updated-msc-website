@@ -101,7 +101,7 @@ CREATE TABLE IF NOT EXISTS event_registrations (
     gender ENUM('Male', 'Female', 'Other'), 
     phone VARCHAR(20), 
     facebook_link VARCHAR(255), 
-    participant_type ENUM('member', 'bulsuan', 'guest') DEFAULT 'guest',
+    participant_type ENUM('member', 'bulsuan', 'guest', 'officer') DEFAULT 'guest',
     program VARCHAR(255),
     college VARCHAR(255),
     year_level VARCHAR(50),

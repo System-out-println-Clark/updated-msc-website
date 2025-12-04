@@ -143,7 +143,7 @@ switch ($method) {
         } elseif ($endpoint && is_numeric($endpoint) && $id === 'cancel-pre-registration') {
             $eventController->cancelRegistration($endpoint);
         } elseif ($endpoint && is_numeric($endpoint) && $id === 'cancel-by-email') {
-        $eventController->cancelRegistrationByEmail($endpoint);
+            $eventController->cancelRegistrationByEmail($endpoint);
         } elseif ($endpoint === '' || $endpoint === 'create') {
             $eventController->create();
         } elseif ($endpoint && is_numeric($endpoint) && $id === 'cancel') {

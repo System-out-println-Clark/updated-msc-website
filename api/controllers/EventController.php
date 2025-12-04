@@ -447,8 +447,8 @@ class EventController
     }
 
     /**
- * Cancel pre-registration by email (for guests and BulSUans)
- */
+     * Cancel pre-registration by email (for guests, BulSUans, members, and officers)
+     */
     public function cancelRegistrationByEmail($eventId)
     {
         try {
@@ -464,12 +464,13 @@ class EventController
             if ($result) {
                 return Response::success(null, "Pre-registration cancelled successfully.");
             } else {
-                return Response::error("No registration found for this email.");
+                return Response::error("No active registration found for this email.");
             }
         } catch (Exception $e) {
             return Response::serverError($e->getMessage());
         }
     }
+
 
     /**
      * Delete event (Officer only)

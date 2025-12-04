@@ -195,15 +195,28 @@ class Event
     }
 
     /**
-     * Cancel registration by email (for all participant types including members)
+     * Cancel registration by email (for ALL participant types including members and officers)
      */
     public function cancelRegistrationByEmail($eventId, $email)
     {
         try {
+            // First, check if the registration exists
+            $checkStmt = $this->db->prepare("
+                SELECT id FROM event_registrations 
+                WHERE event_id = ? AND email = ? 
+                AND attendance_status = 'registered'  -- Only cancel if still registered (not attended)
+            ");
+            $checkStmt->execute([$eventId, $email]);
+            
+            if (!$checkStmt->fetch()) {
+                return false; // No registration found
+            }
+
+            // Delete the registration
             $stmt = $this->db->prepare("
                 DELETE FROM event_registrations 
                 WHERE event_id = ? AND email = ? 
-                AND attendance_status = 'registered'  -- Only cancel if still registered (not attended)
+                AND attendance_status = 'registered'
             ");
             $result = $stmt->execute([$eventId, $email]);
 
@@ -454,6 +467,9 @@ class Event
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Register a Member or Officer
+     */
     public function registerMember($eventId, $studentId)
     {
         try {
@@ -472,7 +488,8 @@ class Event
                     program,
                     college,
                     year_level,
-                    section
+                    section,
+                    role
                 FROM students
                 WHERE id = :student_id
             ");
@@ -482,6 +499,9 @@ class Event
             if (!$student) {
                 throw new Exception("Student information not found.");
             }
+
+            // Determine participant type based on role
+            $participantType = $student['role'] === 'officer' ? 'officer' : 'member';
 
             // Check if this email is already registered for this event
             $checkEmailStmt = $this->db->prepare("
@@ -495,17 +515,25 @@ class Event
             ]);
             
             if ($checkEmailStmt->fetch()) {
-                // Return a duplicate response instead of throwing an exception
                 return [
                     "success" => false,
                     "message" => "duplicate_email",
-                    "email" => $student['email']
+                    "email" => $student['email'],
+                    "participant_type" => $participantType
                 ];
             }
 
-            // Generate QR code for member
-            $memberNumber = $this->getMemberRegistrationCount($eventId) + 1;
-            $qrCode = "MEMBER-" . str_pad($memberNumber, 3, '0', STR_PAD_LEFT);
+            // Generate QR code for member/officer
+            $countStmt = $this->db->prepare("
+                SELECT COUNT(*) AS participant_count 
+                FROM event_registrations 
+                WHERE event_id = :event_id AND participant_type IN ('member', 'officer')
+            ");
+            $countStmt->execute(['event_id' => $eventId]);
+            $row = $countStmt->fetch(PDO::FETCH_ASSOC);
+
+            $participantNumber = $row['participant_count'] + 1;
+            $qrCode = strtoupper($participantType) . "-" . str_pad($participantNumber, 3, '0', STR_PAD_LEFT);
 
             $stmt = $this->db->prepare("
                 INSERT INTO event_registrations (
@@ -529,7 +557,7 @@ class Event
                 ) VALUES (
                     :event_id,
                     :student_id,
-                    'member',
+                    :participant_type,
                     :qr_code,  
                     :first_name,
                     :middle_name,
@@ -550,6 +578,7 @@ class Event
             $stmt->execute([
                 'event_id' => $eventId,
                 'student_id' => $studentId,
+                'participant_type' => $participantType,
                 'qr_code' => $qrCode,
                 'first_name' => $student['first_name'],
                 'middle_name' => $student['middle_name'] ?? null,
@@ -574,17 +603,17 @@ class Event
             ")->execute(['event_id' => $eventId]);
 
             return [
-                "message" => "Successfully registered as a member.",
+                "message" => "Successfully registered as a " . $participantType . ".",
                 "data" => [
                     "registration_id" => $registrationId,
                     "event_id" => $eventId,
-                    "participant_type" => "member",
+                    "participant_type" => $participantType,
                     "qr_code" => $qrCode,
                     "full_name" => trim($student['first_name'] . ' ' . ($student['middle_name'] ?? '') . ' ' . $student['last_name'])
                 ]
             ];
         } catch (Exception $e) {
-            throw new Exception("Member registration failed: " . $e->getMessage());
+            throw new Exception("Member/officer registration failed: " . $e->getMessage());
         }
     }
 
@@ -628,7 +657,7 @@ class Event
     }
     
     /**
-     * Check if an email is registered for an event (for ALL participant types including members)
+     * Check if an email is registered for an event (for ALL participant types)
      */
     public function checkEmailRegistration($eventId, $email)
     {
@@ -778,6 +807,7 @@ class Event
     /**
      * Register a PUBLIC participant (non-BulSU individuals OR logged-in members)
      */
+    
     public function registerPublic($eventId, $data)
     {
         try {
@@ -806,46 +836,46 @@ class Event
                 ];
             }
 
-            // Check if this is a logged-in member by checking if student_id is provided
             $studentId = $data['student_id'] ?? null;
+            $participantType = 'guest'; // Default
             
-            // If student_id is provided, try to find the student to confirm they exist
+            // If student_id is provided, check if it's a member/officer
             if ($studentId) {
                 $studentCheck = $this->db->prepare("
-                    SELECT id FROM students WHERE id = :student_id
+                    SELECT id, role FROM students WHERE id = :student_id
                 ");
                 $studentCheck->execute(['student_id' => $studentId]);
-                if (!$studentCheck->fetch()) {
-                    $studentId = null; // Student doesn't exist, treat as guest
+                $studentInfo = $studentCheck->fetch(PDO::FETCH_ASSOC);
+                
+                if ($studentInfo) {
+                    // This is a logged-in member/officer
+                    $participantType = $studentInfo['role']; // 'member' or 'officer'
                 } else {
-                    // Member exists, ensure participant_type is 'member'
-                    $data['user_type'] = 'member';
+                    $studentId = null; // Student doesn't exist
                 }
             }
 
-            // Count existing guest registrations for this event
+            // Count registrations based on participant type
             $countStmt = $this->db->prepare("
-                SELECT COUNT(*) AS guest_count 
+                SELECT COUNT(*) AS type_count 
                 FROM event_registrations 
-                WHERE event_id = :event_id AND participant_type = 'guest'
+                WHERE event_id = :event_id AND participant_type = :participant_type
             ");
-            $countStmt->execute(['event_id' => $eventId]);
+            $countStmt->execute([
+                'event_id' => $eventId,
+                'participant_type' => $participantType
+            ]);
             $row = $countStmt->fetch(PDO::FETCH_ASSOC);
 
-            $guestNumber = $row['guest_count'] + 1;
-            $qrCode = "GUEST-" . str_pad($guestNumber, 3, '0', STR_PAD_LEFT);
-
-            // If this is a member, use MEMBER prefix instead
-            if ($studentId && $data['user_type'] === 'member') {
-                $memberCountStmt = $this->db->prepare("
-                    SELECT COUNT(*) AS member_count 
-                    FROM event_registrations 
-                    WHERE event_id = :event_id AND participant_type = 'member'
-                ");
-                $memberCountStmt->execute(['event_id' => $eventId]);
-                $memberRow = $memberCountStmt->fetch(PDO::FETCH_ASSOC);
-                $memberNumber = $memberRow['member_count'] + 1;
-                $qrCode = "MEMBER-" . str_pad($memberNumber, 3, '0', STR_PAD_LEFT);
+            $typeNumber = $row['type_count'] + 1;
+            
+            // Generate appropriate QR code based on participant type
+            if ($participantType === 'officer') {
+                $qrCode = "OFFICER-" . str_pad($typeNumber, 3, '0', STR_PAD_LEFT);
+            } elseif ($participantType === 'member') {
+                $qrCode = "MEMBER-" . str_pad($typeNumber, 3, '0', STR_PAD_LEFT);
+            } else {
+                $qrCode = "GUEST-" . str_pad($typeNumber, 3, '0', STR_PAD_LEFT);
             }
 
             // Insert new registration
@@ -889,11 +919,9 @@ class Event
                 )
             ");
 
-            $participantType = $data['user_type'] ?? 'guest';
-            
             $stmt->execute([
                 'event_id' => $eventId,
-                'student_id' => $studentId, // This will be NULL for guests, valid ID for members
+                'student_id' => $studentId,
                 'participant_type' => $participantType,
                 'qr_code' => $qrCode,
                 'first_name' => $data['first_name'],

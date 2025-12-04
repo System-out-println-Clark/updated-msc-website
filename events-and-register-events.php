@@ -990,7 +990,7 @@
 
                 // Logic for different user types and event restrictions
                 if (isLoggedIn) {
-                    // LOGIC 2: Member logic
+                    // LOGIC 2: Member/officer logic
                     try {
                         const userEmail = authStatus.data.user.email;
                         
@@ -1127,7 +1127,7 @@
                         college: s.college || "",
                         year_level: s.year_level || "",
                         section: s.section || "",
-                        user_type: s.role || "bulsuan",
+                        user_type: s.role || "member",
                     };
                 }
             } catch (err) {
@@ -1418,45 +1418,45 @@
 
     async function showPreRegisterFormInsideModal(eventId) {
         const authStatus = await apiCall("/auth/check-login", "GET");
-    let userEmail = null;
-    
-    if (authStatus?.success && authStatus?.data?.logged_in) {
-        userEmail = authStatus.data.user.email;
-    }
-    
-    // If user is logged in and has email, check if already registered
-    if (userEmail) {
-        const registrationCheck = await checkEmailRegistration(eventId, email);
-        if (registrationCheck.registered) {
-            // Show message with cancel button
-            showMessage(`You are already registered for this event as a ${registrationCheck.participant_type}. 
-                <br><br>
-                <button id="cancelByEmailBtn" class="register-btn" style="background: #dc3545; margin-top: 10px;">
-                    Cancel Pre-Registration
-                </button>`);
-            
-            document.getElementById("cancelByEmailBtn").addEventListener("click", async () => {
-                const result = await apiCall(`/events/${eventId}/cancel-by-email`, "POST", { email });
-                if (result?.success) {
-                    showMessage("Your pre-registration has been cancelled.");
-                    // Update event card data
-                    const eventCard = document.querySelector(`.event-card[data-id='${eventId}']`);
-                    if (eventCard) {
-                        const currentCount = parseInt(eventCard.dataset.registeredCount) || 0;
-                        if (currentCount > 0) {
-                            eventCard.dataset.registeredCount = (currentCount - 1).toString();
-                        }
-                    }
-                    // Close modal
-                    const modal = document.getElementById("eventModal");
-                    modal.style.display = "none";
-                } else {
-                    showMessage(result?.message || "Failed to cancel pre-registration.");
-                }
-            });
-            return;
+        let userEmail = null;
+        
+        if (authStatus?.success && authStatus?.data?.logged_in) {
+            userEmail = authStatus.data.user.email;
         }
-    }
+        
+        // If user is logged in and has email, check if already registered
+        if (userEmail) {
+            const registrationCheck = await checkEmailRegistration(eventId, email);
+            if (registrationCheck.registered) {
+                // Show message with cancel button
+                showMessage(`You are already registered for this event as a ${registrationCheck.participant_type}. 
+                    <br><br>
+                    <button id="cancelByEmailBtn" class="register-btn" style="background: #dc3545; margin-top: 10px;">
+                        Cancel Pre-Registration
+                    </button>`);
+                
+                document.getElementById("cancelByEmailBtn").addEventListener("click", async () => {
+                    const result = await apiCall(`/events/${eventId}/cancel-by-email`, "POST", { email });
+                    if (result?.success) {
+                        showMessage("Your pre-registration has been cancelled.");
+                        // Update event card data
+                        const eventCard = document.querySelector(`.event-card[data-id='${eventId}']`);
+                        if (eventCard) {
+                            const currentCount = parseInt(eventCard.dataset.registeredCount) || 0;
+                            if (currentCount > 0) {
+                                eventCard.dataset.registeredCount = (currentCount - 1).toString();
+                            }
+                        }
+                        // Close modal
+                        const modal = document.getElementById("eventModal");
+                        modal.style.display = "none";
+                    } else {
+                        showMessage(result?.message || "Failed to cancel pre-registration.");
+                    }
+                });
+                return;
+            }
+        }
         const modal = document.getElementById("eventModal");
         const modalContent = document.querySelector("#eventModal .modal-content");
 
@@ -2204,7 +2204,6 @@
         async function checkEmailRegistration(eventId, email) {
             try {
                 const response = await apiCall(`/events/${eventId}/check-email?email=${encodeURIComponent(email)}`, 'GET');
-                // The response structure is {success: true, data: {registered: true, participant_type: 'guest'}}
                 if (response?.success && response.data) {
                     return response.data;
                 }
